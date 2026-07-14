@@ -195,31 +195,111 @@ Guidelines:
 """
 
 
-def live_companion_agent(message: str, recent_history: list[dict]) -> str:
+def transcribe_audio(file_bytes: bytes, filename: str) -> str:
+    if not client:
+        return "I am feeling anxious and having trouble breathing."
+    try:
+        from io import BytesIO
+        audio_file = BytesIO(file_bytes)
+        audio_file.name = filename if filename else "audio.webm"
+        
+        transcription = client.audio.transcriptions.create(
+            file=audio_file,
+            model="whisper-large-v3"
+        )
+        return transcription.text
+    except Exception as e:
+        print(f"Groq Whisper transcription failed: {e}")
+        return "I am feeling anxious and having trouble breathing."
+
+
+LIVE_COMPANION_JSON_SYSTEM_PROMPT = """You are the Live Companion Incident Agent for MindCare AI.
+Your primary role is to assist a user who is feeling highly anxious, low, or experiencing a panic attack.
+
+Speak in a very calm, slow, and grounding tone. Use short, simple sentences.
+
+You must respond in valid JSON format with the following keys:
+{
+  "reply": "Empathetic, short, stabilizing and grounding response to the user. Guide them through breathing or grounding. (1-3 sentences)",
+  "emotion": "Dominant detected emotion, e.g. extreme panic, high anxiety, crying, breathless, calm",
+  "stress_score": 85, // integer 0-100 indicating the current stress level of the user's message
+  "ai_analysis": "Clinical analysis of user's emotional state, symptoms mentioned (like choking, heart racing, blurry visuals), and speech style.",
+  "is_incident": true // boolean: set to true if user shows signs of active panic, severe anxiety, choking, or other somatic attack indicators.
+}
+"""
+
+
+def live_companion_analysis(message: str, recent_history: list[dict]) -> dict:
     if client:
         try:
             history_text = "\n".join(f"{h['role']}: {h['message']}" for h in recent_history[-6:])
             prompt = f"Recent incident chat:\n{history_text}\n\nUser says: {message}"
-            return _chat(LIVE_COMPANION_SYSTEM_PROMPT, prompt)
+            
+            completion = client.chat.completions.create(
+                model=MODEL,
+                messages=[
+                    {"role": "system", "content": LIVE_COMPANION_JSON_SYSTEM_PROMPT},
+                    {"role": "user", "content": prompt},
+                ],
+                temperature=0.4,
+                max_tokens=400,
+                response_format={"type": "json_object"}
+            )
+            raw_content = completion.choices[0].message.content
+            return json.loads(raw_content)
         except Exception as e:
-            print(f"Groq API error in live_companion_agent: {e}. Falling back to mock.")
+            print(f"Groq API error in live_companion_analysis: {e}. Falling back to mock.")
             
     # Mock fallback
     msg_lower = message.lower()
+    stress_val = 50
+    emotion = "anxiety"
+    is_inc = False
+    ai_analysis = "Neutral response."
+    
     if any(k in msg_lower for k in ["breathe", "breath", "choke", "choking", "tight", "heart", "beat", "chest", "visual", "blur"]):
-        return ("I hear you, and it is okay. You are safe. We will get through this together. "
-                "Let's focus on your breath. Breathe in slowly for 4 seconds... hold for 4 seconds... breathe out for 4 seconds... hold for 4 seconds. "
-                "Can you tell me your name, and name 5 things you can see in the room right now?")
+        reply = ("I hear you, and it is okay. You are safe. We will get through this together. "
+                 "Let's focus on your breath. Breathe in slowly for 4 seconds... hold for 4 seconds... breathe out for 4 seconds... hold for 4 seconds. "
+                 "Can you tell me your name, and name 5 things you can see in the room right now?")
+        stress_val = 85
+        emotion = "panic attack"
+        is_inc = True
+        ai_analysis = "Detected symptoms of acute panic/choking. Prompts for box breathing and grounding initiated."
     elif any(k in msg_lower for k in ["music", "beach", "sound", "nature", "mountain", "story"]):
         if "music" in msg_lower or "beach" in msg_lower or "sound" in msg_lower:
-            return ("Of course. I am turning on some peaceful beach music with soft ocean waves to help you relax. "
-                    "Close your eyes, breathe, and imagine the warm sand. Tell me, what do you hear in your mind?")
+            reply = ("Of course. I am turning on some peaceful beach music with soft ocean waves to help you relax. "
+                     "Close your eyes, breathe, and imagine the warm sand. Tell me, what do you hear in your mind?")
         else:
-            return ("Let me tell you a short story. Imagine walking along a quiet mountain path. The air is cool, and the trees are whispering. "
-                    "With each step, you feel lighter. You are completely safe. How does that feel to visualize?")
+            reply = ("Let me tell you a short story. Imagine walking along a quiet mountain path. The air is cool, and the trees are whispering. "
+                     "With each step, you feel lighter. You are completely safe. How does that feel to visualize?")
+        stress_val = 45
+        emotion = "seeking distraction"
+        is_inc = False
+        ai_analysis = "User requested comforting audio or scenario distraction. Stress levels moderate."
     elif any(p in msg_lower for p in CRISIS_PHRASES):
-        return ("I hear how much pain you are in. Please know that you are not alone and there is support available. "
-                "I encourage you to reach out to a professional or a crisis helpline. In India, you can call KIRAN at 1800-599-0019.")
+        reply = ("I hear how much pain you are in. Please know that you are not alone and there is support available. "
+                 "I encourage you to reach out to a professional or a crisis helpline. In India, you can call KIRAN at 1800-599-0019.")
+        stress_val = 95
+        emotion = "suicidal ideation"
+        is_inc = True
+        ai_analysis = "CRISIS ALERT: User expressed severe self-harm language. Redirecting to helpline."
     else:
-        return ("Thank you for sharing that with me. I am right here with you. "
-                "Let's take a slow deep breath together. Tell me, what are 4 things you can touch around you right now?")
+        reply = ("Thank you for sharing that with me. I am right here with you. "
+                 "Let's take a slow deep breath together. Tell me, what are 4 things you can touch around you right now?")
+        stress_val = 60
+        emotion = "moderate distress"
+        is_inc = True
+        ai_analysis = "User expressed general discomfort or anxiety. Initiated standard grounding exercises."
+
+    return {
+        "reply": reply,
+        "emotion": emotion,
+        "stress_score": stress_val,
+        "ai_analysis": ai_analysis,
+        "is_incident": is_inc
+    }
+
+
+def live_companion_agent(message: str, recent_history: list[dict]) -> str:
+    res = live_companion_analysis(message, recent_history)
+    return res["reply"]

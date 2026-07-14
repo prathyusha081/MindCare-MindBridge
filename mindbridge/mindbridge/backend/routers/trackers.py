@@ -4,8 +4,9 @@ from sqlalchemy.orm import Session
 from database import get_db
 from models import User, DailyTracker, MentalHealthTracker, IncidentLog
 from schemas import DailyTrackerRequest, MentalHealthEntryRequest, IncidentLogRequest, ChatMessageRequest
+from fastapi import UploadFile, File, Form
 from auth import require_role
-from agents import live_companion_agent
+from agents import live_companion_agent, live_companion_analysis, transcribe_audio
 
 router = APIRouter(prefix="/trackers", tags=["trackers"])
 
@@ -81,27 +82,6 @@ def get_incidents(db: Session = Depends(get_db), user: User = Depends(require_ro
 def incident_companion_chat(payload: ChatMessageRequest, db: Session = Depends(get_db), user: User = Depends(require_role("patient"))):
     from datetime import datetime, timedelta
     
-    # Check if a parent panic incident alert was logged within the last 30 minutes
-    time_threshold = datetime.utcnow() - timedelta(minutes=30)
-    recent_panic = db.query(IncidentLog).filter(
-        IncidentLog.user_id == user.id,
-        IncidentLog.incident_type.notin_(["user_utterance", "agent_reply"]),
-        IncidentLog.timestamp >= time_threshold
-    ).first()
-    
-    if not recent_panic:
-        # Create an incident alert!
-        panic_alert = IncidentLog(
-            user_id=user.id,
-            incident_type="active_panic_episode",
-            notes=f"Started Live Incident Companion chat. Initial message: '{payload.message}'",
-            input_mode=payload.input_mode,
-            stress_score=85.0,
-            ai_analysis="System generated active panic/anxiety alert upon companion activation.",
-            resolved=False
-        )
-        db.add(panic_alert)
-
     # Fetch recent incident dialog history for context
     recent_logs = db.query(IncidentLog).filter(
         IncidentLog.user_id == user.id,
@@ -113,8 +93,34 @@ def incident_companion_chat(payload: ChatMessageRequest, db: Session = Depends(g
         for r in recent_logs
     ][::-1]
 
-    # Get stabilizing response from the Live Companion agent
-    reply = live_companion_agent(payload.message, recent)
+    # Get stabilizing response and classification details
+    analysis = live_companion_analysis(payload.message, recent)
+    reply = analysis["reply"]
+    stress_score = float(analysis["stress_score"])
+    emotion = analysis["emotion"]
+    ai_analysis = analysis["ai_analysis"]
+    is_incident = analysis["is_incident"]
+
+    # Log parent incident alert if the AI identifies this as an active panic event
+    if is_incident or stress_score > 60:
+        time_threshold = datetime.utcnow() - timedelta(minutes=30)
+        recent_panic = db.query(IncidentLog).filter(
+            IncidentLog.user_id == user.id,
+            IncidentLog.incident_type.notin_(["user_utterance", "agent_reply"]),
+            IncidentLog.timestamp >= time_threshold
+        ).first()
+        
+        if not recent_panic:
+            panic_alert = IncidentLog(
+                user_id=user.id,
+                incident_type="panic_incident",
+                notes=f"Text Panic Trigger: {payload.message}",
+                input_mode=payload.input_mode,
+                stress_score=stress_score,
+                ai_analysis=f"AI Analysis: {ai_analysis} | Detected emotion: {emotion}",
+                resolved=False
+            )
+            db.add(panic_alert)
 
     # Log this conversation turn as incident records
     user_entry = IncidentLog(
@@ -122,8 +128,8 @@ def incident_companion_chat(payload: ChatMessageRequest, db: Session = Depends(g
         incident_type="user_utterance",
         notes=payload.message,
         input_mode=payload.input_mode,
-        stress_score=80.0,
-        ai_analysis=f"Grounding mode chat. Detected facial expression: {payload.client_emotion or 'unknown'}",
+        stress_score=stress_score,
+        ai_analysis=f"Grounding mode chat. Detected emotion: {emotion}",
         resolved=False
     )
     agent_entry = IncidentLog(
@@ -131,7 +137,7 @@ def incident_companion_chat(payload: ChatMessageRequest, db: Session = Depends(g
         incident_type="agent_reply",
         notes=reply,
         input_mode="text",
-        stress_score=80.0,
+        stress_score=stress_score,
         ai_analysis="Calming agent response",
         resolved=False
     )
@@ -139,4 +145,82 @@ def incident_companion_chat(payload: ChatMessageRequest, db: Session = Depends(g
     db.add(agent_entry)
     db.commit()
 
-    return {"reply": reply}
+    return {"reply": reply, "emotion": emotion, "stress_score": stress_score}
+
+
+@router.post("/incident/voice-companion")
+async def incident_voice_companion(
+    file: UploadFile = File(...),
+    client_emotion: str = Form(None),
+    db: Session = Depends(get_db),
+    user: User = Depends(require_role("patient"))
+):
+    from datetime import datetime, timedelta
+    
+    file_bytes = await file.read()
+    transcript = transcribe_audio(file_bytes, file.filename)
+    
+    # Fetch recent incident dialog history for context
+    recent_logs = db.query(IncidentLog).filter(
+        IncidentLog.user_id == user.id,
+        IncidentLog.incident_type.in_(["user_utterance", "agent_reply"])
+    ).order_by(IncidentLog.timestamp.desc()).limit(6).all()
+    
+    recent = [
+        {"role": "user" if r.incident_type == "user_utterance" else "agent", "message": r.notes or ""}
+        for r in recent_logs
+    ][::-1]
+
+    # Get stabilizing response and classification details
+    analysis = live_companion_analysis(transcript, recent)
+    reply = analysis["reply"]
+    stress_score = float(analysis["stress_score"])
+    emotion = analysis["emotion"]
+    ai_analysis = analysis["ai_analysis"]
+    is_incident = analysis["is_incident"]
+
+    # Log parent incident alert if the AI identifies this as an active panic event
+    if is_incident or stress_score > 60:
+        time_threshold = datetime.utcnow() - timedelta(minutes=30)
+        recent_panic = db.query(IncidentLog).filter(
+            IncidentLog.user_id == user.id,
+            IncidentLog.incident_type.notin_(["user_utterance", "agent_reply"]),
+            IncidentLog.timestamp >= time_threshold
+        ).first()
+        
+        if not recent_panic:
+            panic_alert = IncidentLog(
+                user_id=user.id,
+                incident_type="voice_panic_incident",
+                notes=f"Voice Panic Trigger: {transcript}",
+                input_mode="voice",
+                stress_score=stress_score,
+                ai_analysis=f"AI Analysis: {ai_analysis} | Detected emotion: {emotion}",
+                resolved=False
+            )
+            db.add(panic_alert)
+
+    # Log this conversation turn as incident records
+    user_entry = IncidentLog(
+        user_id=user.id,
+        incident_type="user_utterance",
+        notes=f"[Voice Message] {transcript}",
+        input_mode="voice",
+        stress_score=stress_score,
+        ai_analysis=f"Grounding voice chat. Detected emotion: {emotion}",
+        resolved=False
+    )
+    agent_entry = IncidentLog(
+        user_id=user.id,
+        incident_type="agent_reply",
+        notes=reply,
+        input_mode="text",
+        stress_score=stress_score,
+        ai_analysis="Calming agent response",
+        resolved=False
+    )
+    db.add(user_entry)
+    db.add(agent_entry)
+    db.commit()
+
+    return {"reply": reply, "transcript": transcript, "emotion": emotion, "stress_score": stress_score}

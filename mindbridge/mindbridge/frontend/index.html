@@ -849,73 +849,50 @@ async function toggleVoiceRecording() {
   }
 }
 
-function processVoiceMessage() {
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRecognition) {
-    appendBubble("companionChatWindow", "agent", "Speech transcription is not supported in this browser. Please type your message.");
-    return;
-  }
+async function processVoiceMessage() {
+  if (audioChunks.length === 0) return;
+  appendBubble("companionChatWindow", "agent", "Uploading voice message for AI transcription and emotion analysis...");
   
-  appendBubble("companionChatWindow", "agent", "Analyzing voice and transcribing words...");
-  
-  const rec = new SpeechRecognition();
-  rec.lang = "en-US";
-  rec.onresult = async (event) => {
-    const transcript = event.results[0][0].transcript;
-    appendBubble("companionChatWindow", "user", `[Voice Message] ${transcript}`);
+  try {
+    const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+    const formData = new FormData();
+    formData.append("file", audioBlob, "voice_message.webm");
     
-    // Analyze voice Stress Score
-    const voiceStress = Math.min(100, Math.round(maxVolumeLevel * 0.9));
+    const headers = {};
+    if (state.token) headers["Authorization"] = "Bearer " + state.token;
     
-    // Analyze word triggers
-    const msgL = transcript.toLowerCase();
-    let wordStress = 0;
-    const stressKeywords = ["stress", "anxious", "anxiety", "panic", "choke", "choking", "tight", "breath", "breathe", "scared", "fear", "die", "depressed", "low"];
-    stressKeywords.forEach(k => {
-      if (msgL.includes(k)) wordStress += 15;
+    const response = await fetch(API_BASE + "/trackers/incident/voice-companion", {
+      method: "POST",
+      headers,
+      body: formData
     });
     
-    // Calculated session risk
-    const calculatedRisk = Math.min(100, Math.max(25, voiceStress + wordStress));
+    if (!response.ok) throw new Error("Voice companion API failed");
+    const res = await response.json();
+    
+    // Display transcript and analysis bubble
+    appendBubble("companionChatWindow", "user", `[Voice Message] ${res.transcript}`);
+    
+    const voiceStress = Math.round(res.stress_score);
     let rLvl = "Low";
-    if (calculatedRisk >= 71) rLvl = "High";
-    else if (calculatedRisk >= 41) rLvl = "Medium";
+    if (voiceStress >= 71) rLvl = "High";
+    else if (voiceStress >= 41) rLvl = "Medium";
+    
+    appendBubble("companionChatWindow", "agent", `🎙️ AI Voice Analysis Result:
+• Transcribed Text: "${res.transcript}"
+• Detected Emotion: ${res.emotion}
+• Calculated Stress Score: ${voiceStress}/100
+• Overall Session Risk: ${voiceStress}% (${rLvl})`);
 
-    appendBubble("companionChatWindow", "agent", `🎙️ Voice Analysis Result:
-• Pitch/Energy Jitter: ${voiceStress > 55 ? "Elevated Stress" : "Normal"}
-• Speaking Pace: ${voiceStress > 55 ? "Rapid/Breathy" : "Steady"}
-• Voice Stress Score: ${voiceStress}/100
-• Overall Session Risk: ${calculatedRisk}% (${rLvl})`);
-
-    try {
-      const res = await api("/trackers/incident/companion", "POST", {
-        message: transcript,
-        input_mode: "voice",
-        client_emotion: rLvl.toLowerCase()
-      });
-      appendBubble("companionChatWindow", "agent", res.reply);
-      
-      if (calculatedRisk > 60) {
-        // Log incident automatically
-        await api("/trackers/incident", "POST", {
-          incident_type: "voice_stress_panic",
-          notes: `Voice stress: ${voiceStress}%. Words: "${transcript}". Risk score: ${calculatedRisk}%`,
-          input_mode: "voice"
-        });
-      }
-      
-      if (res.reply.toLowerCase().includes("breathe") || res.reply.toLowerCase().includes("inhale")) {
-        pulseBreathingAnimation();
-      }
-    } catch(e) {
-      appendBubble("companionChatWindow", "agent", "I'm right here with you. Take a slow, deep breath.");
+    appendBubble("companionChatWindow", "agent", res.reply);
+    
+    if (res.reply.toLowerCase().includes("breathe") || res.reply.toLowerCase().includes("inhale")) {
+      pulseBreathingAnimation();
     }
-  };
-  
-  rec.onerror = () => {
-    appendBubble("companionChatWindow", "agent", "Sorry, I couldn't transcribe the voice. Take a slow breath, I am here to support you.");
-  };
-  rec.start();
+  } catch (e) {
+    appendBubble("companionChatWindow", "agent", "Error transcribing voice message. I'm right here with you. Take a slow, deep breath.");
+    console.error(e);
+  }
 }
 
 // ---------- API client ----------
