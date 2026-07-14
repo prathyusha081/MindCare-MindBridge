@@ -49,12 +49,17 @@ def add_report(
             shutil.copyfileobj(file.file, buffer)
         file_path = f"/static/uploads/{filename}"
 
+    try:
+        parsed_date = datetime.fromisoformat(date.replace("Z", ""))
+    except Exception:
+        parsed_date = datetime.utcnow()
+
     rep = DiagnosisReport(
         user_id=user.id,
         report_title=report_title,
         diagnosis=diagnosis,
         doctor=doctor,
-        date=datetime.fromisoformat(date.replace("Z", "")),
+        date=parsed_date,
         file_path=file_path
     )
     db.add(rep)

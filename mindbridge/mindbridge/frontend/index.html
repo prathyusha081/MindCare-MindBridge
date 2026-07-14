@@ -1250,18 +1250,22 @@ async function loadPatientReports() {
 
 async function addReport() {
   try {
-    const title = document.getElementById("repTitle").value;
-    const diag = document.getElementById("repDiag").value;
-    const doc = document.getElementById("repDoc").value;
+    const title = document.getElementById("repTitle").value.trim();
+    const diag = document.getElementById("repDiag").value.trim();
+    const doc = document.getElementById("repDoc").value.trim();
     const fileInput = document.getElementById("repFile");
-    if (!title || !diag || !doc) return;
+    
+    if (!title || !diag || !doc) {
+      alert("Please fill in all required fields: Title, Diagnosis, and Referring Practitioner.");
+      return;
+    }
     
     const formData = new FormData();
     formData.append("report_title", title);
     formData.append("diagnosis", diag);
     formData.append("doctor", doc);
     formData.append("date", new Date().toISOString());
-    if (fileInput.files[0]) {
+    if (fileInput.files.length > 0) {
       formData.append("file", fileInput.files[0]);
     }
     
@@ -1273,7 +1277,10 @@ async function addReport() {
       headers,
       body: formData
     });
-    if (!res.ok) throw new Error("Upload failed");
+    if (!res.ok) {
+      const errDetail = await res.json().catch(() => ({ detail: "Upload failed" }));
+      throw new Error(errDetail.detail || "Upload failed");
+    }
     
     document.getElementById("repTitle").value = "";
     document.getElementById("repDiag").value = "";
@@ -1281,7 +1288,7 @@ async function addReport() {
     fileInput.value = "";
     alert("Report uploaded successfully.");
     loadPatientReports();
-  } catch (e) { alert(e.message); }
+  } catch (e) { alert("Error uploading report: " + e.message); }
 }
 
 // ---------- Reports & Reviews ----------

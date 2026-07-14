@@ -79,6 +79,29 @@ def get_incidents(db: Session = Depends(get_db), user: User = Depends(require_ro
 
 @router.post("/incident/companion")
 def incident_companion_chat(payload: ChatMessageRequest, db: Session = Depends(get_db), user: User = Depends(require_role("patient"))):
+    from datetime import datetime, timedelta
+    
+    # Check if a parent panic incident alert was logged within the last 30 minutes
+    time_threshold = datetime.utcnow() - timedelta(minutes=30)
+    recent_panic = db.query(IncidentLog).filter(
+        IncidentLog.user_id == user.id,
+        IncidentLog.incident_type.notin_(["user_utterance", "agent_reply"]),
+        IncidentLog.timestamp >= time_threshold
+    ).first()
+    
+    if not recent_panic:
+        # Create an incident alert!
+        panic_alert = IncidentLog(
+            user_id=user.id,
+            incident_type="active_panic_episode",
+            notes=f"Started Live Incident Companion chat. Initial message: '{payload.message}'",
+            input_mode=payload.input_mode,
+            stress_score=85.0,
+            ai_analysis="System generated active panic/anxiety alert upon companion activation.",
+            resolved=False
+        )
+        db.add(panic_alert)
+
     # Fetch recent incident dialog history for context
     recent_logs = db.query(IncidentLog).filter(
         IncidentLog.user_id == user.id,
