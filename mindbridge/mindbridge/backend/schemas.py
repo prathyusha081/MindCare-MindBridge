@@ -42,13 +42,37 @@ class DailyTrackerRequest(BaseModel):
     water_intake: float
     exercise_minutes: int
     mood_score: int
+    food_quality: Optional[str] = None
 
 
 class MentalHealthEntryRequest(BaseModel):
     stress_score: float
     anxiety_score: float
     depression_score: float
+    focus_score: float
+    energy_level: float
     notes: Optional[str] = None
+
+
+class IncidentLogRequest(BaseModel):
+    incident_type: str
+    notes: Optional[str] = None
+    input_mode: str = "text"
+
+
+class MedicationRequest(BaseModel):
+    medicine_name: str
+    dosage: str
+    frequency: str
+    start_date: datetime
+
+
+class DiagnosisReportRequest(BaseModel):
+    report_title: str
+    diagnosis: str
+    doctor: str
+    date: datetime
+    file_path: Optional[str] = None
 
 
 class DoctorReviewRequest(BaseModel):

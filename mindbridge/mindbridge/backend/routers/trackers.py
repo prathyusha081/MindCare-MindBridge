@@ -2,9 +2,10 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from database import get_db
-from models import User, DailyTracker, MentalHealthTracker
-from schemas import DailyTrackerRequest, MentalHealthEntryRequest
+from models import User, DailyTracker, MentalHealthTracker, IncidentLog
+from schemas import DailyTrackerRequest, MentalHealthEntryRequest, IncidentLogRequest, ChatMessageRequest
 from auth import require_role
+from agents import live_companion_agent
 
 router = APIRouter(prefix="/trackers", tags=["trackers"])
 
@@ -23,7 +24,7 @@ def get_daily_entries(db: Session = Depends(get_db), user: User = Depends(requir
     rows = db.query(DailyTracker).filter(DailyTracker.user_id == user.id).order_by(DailyTracker.date).all()
     return [
         {"date": r.date, "sleep_hours": r.sleep_hours, "water_intake": r.water_intake,
-         "exercise_minutes": r.exercise_minutes, "mood_score": r.mood_score}
+         "exercise_minutes": r.exercise_minutes, "mood_score": r.mood_score, "food_quality": r.food_quality}
         for r in rows
     ]
 
@@ -42,6 +43,77 @@ def get_mh_entries(db: Session = Depends(get_db), user: User = Depends(require_r
     rows = db.query(MentalHealthTracker).filter(MentalHealthTracker.user_id == user.id).order_by(MentalHealthTracker.date).all()
     return [
         {"date": r.date, "stress_score": r.stress_score, "anxiety_score": r.anxiety_score,
-         "depression_score": r.depression_score, "notes": r.notes}
+         "depression_score": r.depression_score, "focus_score": r.focus_score, "energy_level": r.energy_level, "notes": r.notes}
         for r in rows
     ]
+
+
+@router.post("/incident")
+def add_incident(payload: IncidentLogRequest, db: Session = Depends(get_db), user: User = Depends(require_role("patient"))):
+    entry = IncidentLog(
+        user_id=user.id,
+        incident_type=payload.incident_type,
+        notes=payload.notes,
+        input_mode=payload.input_mode,
+        stress_score=85.0 if "panic" in payload.incident_type.lower() else 65.0,
+        ai_analysis="Manual incident log entry by patient.",
+        resolved=False
+    )
+    db.add(entry)
+    db.commit()
+    return {"status": "saved"}
+
+
+@router.get("/incident")
+def get_incidents(db: Session = Depends(get_db), user: User = Depends(require_role("patient"))):
+    rows = db.query(IncidentLog).filter(
+        IncidentLog.user_id == user.id,
+        IncidentLog.incident_type.notin_(["user_utterance", "agent_reply"])
+    ).order_by(IncidentLog.timestamp.desc()).all()
+    return [
+        {"id": r.id, "type": r.incident_type, "notes": r.notes, "input_mode": r.input_mode,
+         "stress_score": r.stress_score, "analysis": r.ai_analysis, "timestamp": r.timestamp, "resolved": r.resolved}
+        for r in rows
+    ]
+
+
+@router.post("/incident/companion")
+def incident_companion_chat(payload: ChatMessageRequest, db: Session = Depends(get_db), user: User = Depends(require_role("patient"))):
+    # Fetch recent incident dialog history for context
+    recent_logs = db.query(IncidentLog).filter(
+        IncidentLog.user_id == user.id,
+        IncidentLog.incident_type.in_(["user_utterance", "agent_reply"])
+    ).order_by(IncidentLog.timestamp.desc()).limit(6).all()
+    
+    recent = [
+        {"role": "user" if r.incident_type == "user_utterance" else "agent", "message": r.notes or ""}
+        for r in recent_logs
+    ][::-1]
+
+    # Get stabilizing response from the Live Companion agent
+    reply = live_companion_agent(payload.message, recent)
+
+    # Log this conversation turn as incident records
+    user_entry = IncidentLog(
+        user_id=user.id,
+        incident_type="user_utterance",
+        notes=payload.message,
+        input_mode=payload.input_mode,
+        stress_score=80.0,
+        ai_analysis=f"Grounding mode chat. Detected facial expression: {payload.client_emotion or 'unknown'}",
+        resolved=False
+    )
+    agent_entry = IncidentLog(
+        user_id=user.id,
+        incident_type="agent_reply",
+        notes=reply,
+        input_mode="text",
+        stress_score=80.0,
+        ai_analysis="Calming agent response",
+        resolved=False
+    )
+    db.add(user_entry)
+    db.add(agent_entry)
+    db.commit()
+
+    return {"reply": reply}

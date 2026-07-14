@@ -177,3 +177,49 @@ def report_agent(tracker_rows: list[dict], chat_rows: list[dict]) -> str:
     
     summary = f"Summary over the past week shows an average of {avg_sleep:.1f} hours of sleep, with overall mood tracking around {avg_mood:.1f}/10. Stress levels averaged {avg_stress:.1f}%. The patient's tracking indicates relatively stable wellness indicators with no critical trends reported."
     return summary
+
+
+LIVE_COMPANION_SYSTEM_PROMPT = """You are the Live Companion Incident Agent for MindCare AI. 
+Your primary role is to assist a user who is feeling highly anxious, low, or experiencing a panic attack.
+
+Guidelines:
+1. Speak in a very calm, slow, and grounding tone. Use short, simple sentences.
+2. If the user mentions physical symptoms (e.g. choking, breathing issues, racing heart, blurry visuals, chest tightness), validate their feelings immediately: "I hear you, and it's okay. You are safe. We will get through this together."
+3. Guide them through a slow, rhythmic breathing exercise: "Breathe in slowly for 4 seconds... hold for 4 seconds... breathe out for 4 seconds... hold for 4 seconds."
+4. Use the 5-4-3-2-1 grounding technique to divert their mind:
+   - Ask them to name 5 things they see in the room.
+   - (In subsequent turns or if they respond) ask for 4 things they can touch, 3 things they hear, 2 things they smell, 1 thing they taste.
+5. Offer to play a calming scenario (e.g. a peaceful beach with waves, a quiet mountain trail) or tell them a soothing story to shift their attention.
+6. If they ask for music, mention that you are turning on beach music or nature sounds for them.
+7. Maintain safety: Never diagnose them, and if they express severe distress that doesn't calm down, gently remind them that they can reach out to their doctor or the emergency number.
+"""
+
+
+def live_companion_agent(message: str, recent_history: list[dict]) -> str:
+    if client:
+        try:
+            history_text = "\n".join(f"{h['role']}: {h['message']}" for h in recent_history[-6:])
+            prompt = f"Recent incident chat:\n{history_text}\n\nUser says: {message}"
+            return _chat(LIVE_COMPANION_SYSTEM_PROMPT, prompt)
+        except Exception as e:
+            print(f"Groq API error in live_companion_agent: {e}. Falling back to mock.")
+            
+    # Mock fallback
+    msg_lower = message.lower()
+    if any(k in msg_lower for k in ["breathe", "breath", "choke", "choking", "tight", "heart", "beat", "chest", "visual", "blur"]):
+        return ("I hear you, and it is okay. You are safe. We will get through this together. "
+                "Let's focus on your breath. Breathe in slowly for 4 seconds... hold for 4 seconds... breathe out for 4 seconds... hold for 4 seconds. "
+                "Can you tell me your name, and name 5 things you can see in the room right now?")
+    elif any(k in msg_lower for k in ["music", "beach", "sound", "nature", "mountain", "story"]):
+        if "music" in msg_lower or "beach" in msg_lower or "sound" in msg_lower:
+            return ("Of course. I am turning on some peaceful beach music with soft ocean waves to help you relax. "
+                    "Close your eyes, breathe, and imagine the warm sand. Tell me, what do you hear in your mind?")
+        else:
+            return ("Let me tell you a short story. Imagine walking along a quiet mountain path. The air is cool, and the trees are whispering. "
+                    "With each step, you feel lighter. You are completely safe. How does that feel to visualize?")
+    elif any(p in msg_lower for p in CRISIS_PHRASES):
+        return ("I hear how much pain you are in. Please know that you are not alone and there is support available. "
+                "I encourage you to reach out to a professional or a crisis helpline. In India, you can call KIRAN at 1800-599-0019.")
+    else:
+        return ("Thank you for sharing that with me. I am right here with you. "
+                "Let's take a slow deep breath together. Tell me, what are 4 things you can touch around you right now?")

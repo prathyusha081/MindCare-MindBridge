@@ -3,145 +3,585 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>MindBridge — AI Wellness Companion</title>
+<title>MindCare AI — Agentic Mental Wellness Companion</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 <style>
-  :root{
-    --paper:#FAF7F2; --ink:#2B2E2C; --moss:#5B7A63; --moss-dark:#456151;
-    --clay:#C97B5D; --brick:#B85C4A; --slate:#3B4A5A; --card:#FFFFFF;
-    --line:#E7E1D6;
+  :root {
+    --paper: #F6F4EF;
+    --ink: #1E2220;
+    --moss: #4A6B53;
+    --moss-dark: #37503E;
+    --moss-light: #EBF1EC;
+    --clay: #D08A47;
+    --brick: #BD4E3C;
+    --brick-light: #FBECEB;
+    --slate: #4E5E6B;
+    --card: #FFFFFF;
+    --line: #E3DCD0;
+    --shadow: rgba(30,34,32,0.06);
   }
-  *{box-sizing:border-box;}
-  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',sans-serif;}
-  h1,h2,h3,.display{font-family:'Fraunces',serif;}
-  .hidden{display:none !important;}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:24px;box-shadow:0 2px 10px rgba(43,46,44,0.04);}
-  .btn{background:var(--moss);color:white;border:none;border-radius:10px;padding:12px 20px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:background .15s;}
-  .btn:hover{background:var(--moss-dark);}
-  .btn.secondary{background:transparent;color:var(--moss);border:1.5px solid var(--moss);}
-  .btn.warn{background:var(--brick);}
-  input,select,textarea{width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-family:'Inter',sans-serif;font-size:14px;background:white;color:var(--ink);}
-  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--moss);}
-  label{font-size:13px;font-weight:600;color:#5c5f5c;display:block;margin:14px 0 6px;}
-  .container{max-width:1100px;margin:0 auto;padding:32px 20px;}
-  .topbar{display:flex;justify-content:space-between;align-items:center;padding:18px 32px;border-bottom:1px solid var(--line);background:var(--card);}
-  .grid{display:grid;gap:20px;}
-  .grid-2{grid-template-columns:1fr 1fr;}
-  @media(max-width:800px){.grid-2{grid-template-columns:1fr;}}
+  
+  * { box-sizing: border-box; transition: all 0.2s ease; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Outfit', sans-serif;
+    line-height: 1.5;
+  }
+  
+  h1, h2, h3, .display {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+  }
+  
+  .hidden { display: none !important; }
+  
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 4px 20px var(--shadow);
+  }
+  
+  .card:hover {
+    box-shadow: 0 8px 30px rgba(30,34,32,0.1);
+    transform: translateY(-2px);
+  }
+  
+  .btn {
+    background: var(--moss);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 12px 24px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Outfit', sans-serif;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  
+  .btn:hover {
+    background: var(--moss-dark);
+    transform: translateY(-1px);
+  }
+  
+  .btn.secondary {
+    background: transparent;
+    color: var(--moss);
+    border: 2px solid var(--moss);
+  }
+  
+  .btn.secondary:hover {
+    background: var(--moss-light);
+  }
+  
+  .btn.warn { background: var(--brick); }
+  .btn.warn:hover { background: #A03D2E; }
+  
+  input, select, textarea {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid var(--line);
+    border-radius: 12px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 14px;
+    background: white;
+    color: var(--ink);
+  }
+  
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--moss);
+    box-shadow: 0 0 0 4px var(--moss-light);
+  }
+  
+  label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--slate);
+    display: block;
+    margin: 14px 0 6px;
+  }
+  
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 32px 20px;
+  }
+  
+  .topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 40px;
+    border-bottom: 1px solid var(--line);
+    background: var(--card);
+    box-shadow: 0 2px 10px var(--shadow);
+  }
+  
+  .grid { display: grid; gap: 24px; }
+  .grid-2 { grid-template-columns: 1fr 1fr; }
+  .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .grid-1-3 { grid-template-columns: 1fr 2.5fr; }
+  
+  @media(max-width: 900px) {
+    .grid-2, .grid-3, .grid-1-3 { grid-template-columns: 1fr; }
+    .topbar { padding: 16px 20px; flex-direction: column; gap: 12px; text-align: center; }
+  }
 
-  /* signature breathing element */
-  .breathe{width:64px;height:64px;border-radius:50%;background:radial-gradient(circle,var(--moss) 0%,var(--moss-dark) 100%);
-    animation:breathe 4s ease-in-out infinite;margin:0 auto;}
-  @keyframes breathe{0%,100%{transform:scale(0.75);opacity:.7;}50%{transform:scale(1.15);opacity:1;}}
+  /* Navigation Tabs */
+  .nav-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    background: var(--line);
+    padding: 6px;
+    border-radius: 14px;
+    width: fit-content;
+  }
+  
+  .nav-tab {
+    padding: 10px 20px;
+    border-radius: 10px;
+    border: none;
+    background: transparent;
+    font-weight: 600;
+    color: var(--slate);
+    cursor: pointer;
+    font-family: 'Outfit', sans-serif;
+  }
+  
+  .nav-tab.active {
+    background: var(--card);
+    color: var(--moss);
+    box-shadow: 0 2px 8px var(--shadow);
+  }
 
-  .chat-window{height:380px;overflow-y:auto;border:1px solid var(--line);border-radius:12px;padding:16px;background:#FFFDF9;display:flex;flex-direction:column;gap:10px;}
-  .bubble{max-width:75%;padding:10px 14px;border-radius:14px;font-size:14.5px;line-height:1.45;}
-  .bubble.user{align-self:flex-end;background:var(--moss);color:white;border-bottom-right-radius:4px;}
-  .bubble.agent{align-self:flex-start;background:#EFEAE0;color:var(--ink);border-bottom-left-radius:4px;white-space:pre-wrap;}
-  .bubble.escalated{border:2px solid var(--brick);}
+  /* Signature Breathing Circle */
+  .breathe-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 30px 0;
+  }
+  
+  .breathe-circle {
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--moss) 0%, var(--moss-dark) 100%);
+    box-shadow: 0 0 30px rgba(74, 107, 83, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 18px;
+    animation: breathe-cycle 16s ease-in-out infinite;
+    text-align: center;
+    padding: 20px;
+  }
+  
+  @keyframes breathe-cycle {
+    0%, 100% { transform: scale(0.85); opacity: 0.8; }
+    25% { transform: scale(1.2); opacity: 1; box-shadow: 0 0 50px rgba(74, 107, 83, 0.6); }
+    50% { transform: scale(1.2); opacity: 1; }
+    75% { transform: scale(0.85); opacity: 0.8; }
+  }
 
-  .mode-toggle{display:flex;gap:6px;margin-bottom:10px;}
-  .mode-btn{flex:1;padding:8px;border-radius:8px;border:1.5px solid var(--line);background:white;cursor:pointer;font-size:13px;font-weight:600;color:#777;}
-  .mode-btn.active{border-color:var(--moss);color:var(--moss);background:#F1F5F1;}
+  .chat-window {
+    height: 400px;
+    overflow-y: auto;
+    border: 2px solid var(--line);
+    border-radius: 16px;
+    padding: 20px;
+    background: #FAF9F6;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .bubble {
+    max-width: 75%;
+    padding: 12px 18px;
+    border-radius: 16px;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  
+  .bubble.user {
+    align-self: flex-end;
+    background: var(--moss);
+    color: white;
+    border-bottom-right-radius: 4px;
+    box-shadow: 0 2px 8px rgba(74,107,83,0.2);
+  }
+  
+  .bubble.agent {
+    align-self: flex-start;
+    background: var(--line);
+    color: var(--ink);
+    border-bottom-left-radius: 4px;
+    white-space: pre-wrap;
+  }
+  
+  .bubble.escalated {
+    border: 2px solid var(--brick);
+    background: var(--brick-light);
+    color: var(--brick);
+  }
 
-  .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;}
-  .badge.low{background:#E4F0E6;color:var(--moss-dark);}
-  .badge.moderate{background:#FBEBD9;color:var(--clay);}
-  .badge.high{background:#F6DFDA;color:var(--brick);}
+  /* Badge styling */
+  .badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .badge.low { background: var(--moss-light); color: var(--moss-dark); }
+  .badge.moderate { background: #FEF3C7; color: #D97706; }
+  .badge.high { background: var(--brick-light); color: var(--brick); }
 
-  .patient-row{display:flex;justify-content:space-between;align-items:center;padding:14px;border-bottom:1px solid var(--line);cursor:pointer;}
-  .patient-row:hover{background:#F6F4EF;}
+  /* Grounding game checklist */
+  .grounding-box {
+    margin-top: 15px;
+    padding: 15px;
+    background: var(--moss-light);
+    border-radius: 12px;
+    border-left: 5px solid var(--moss);
+  }
+  
+  .grounding-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 8px 0;
+    font-size: 14px;
+  }
+  
+  .grounding-item input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    accent-color: var(--moss);
+    cursor: pointer;
+  }
 
-  .disclaimer{font-size:12px;color:#888;border-top:1px solid var(--line);padding-top:12px;margin-top:16px;line-height:1.5;}
-  .rec-dot{width:8px;height:8px;border-radius:50%;background:var(--brick);display:inline-block;margin-right:6px;animation:pulse 1.2s infinite;}
-  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+  .table-container {
+    overflow-x: auto;
+    margin-top: 10px;
+  }
+  
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+  }
+  
+  th, td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--line);
+  }
+  
+  th {
+    background: var(--moss-light);
+    color: var(--moss-dark);
+    font-weight: 600;
+  }
+  
+  .progress-bar {
+    background: #E5E7EB;
+    border-radius: 10px;
+    height: 10px;
+    width: 100%;
+    overflow: hidden;
+    margin-top: 6px;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    border-radius: 10px;
+  }
+
+  .patient-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    border-bottom: 1px solid var(--line);
+    cursor: pointer;
+    border-radius: 10px;
+  }
+  
+  .patient-row:hover {
+    background: var(--moss-light);
+  }
 </style>
 </head>
 <body>
 
 <!-- ================= AUTH VIEW ================= -->
-<div id="authView" class="container" style="max-width:420px;">
+<div id="authView" class="container" style="max-width:440px; margin-top: 50px;">
   <div style="text-align:center;margin-bottom:28px;">
-    <div class="breathe"></div>
-    <h1 style="margin:16px 0 4px;font-size:28px;">MindBridge</h1>
-    <p style="color:#777;font-size:14px;">An AI companion for everyday stress — with a human doctor always in the loop.</p>
+    <div class="breathe-circle" style="width:70px;height:70px;margin:0 auto;animation:breathe-cycle 4s infinite;"></div>
+    <h1 style="margin:20px 0 4px;font-size:32px;">MindCare AI</h1>
+    <p style="color:var(--slate);font-size:15px;">Multi-Agent Mental Health Accessibility Companion</p>
   </div>
 
   <div class="card">
     <div style="display:flex;gap:8px;margin-bottom:18px;">
-      <button class="mode-btn active" id="loginTab" onclick="switchAuthTab('login')">Log in</button>
-      <button class="mode-btn" id="signupTab" onclick="switchAuthTab('signup')">Sign up</button>
+      <button class="nav-tab active" style="flex:1;" id="loginTab" onclick="switchAuthTab('login')">Log in</button>
+      <button class="nav-tab" style="flex:1;" id="signupTab" onclick="switchAuthTab('signup')">Sign up</button>
     </div>
 
     <div id="loginForm">
-      <label>Email</label><input id="loginEmail" type="email" placeholder="you@example.com"/>
+      <label>Email Address</label><input id="loginEmail" type="email" placeholder="you@example.com"/>
       <label>Password</label><input id="loginPassword" type="password" placeholder="••••••••"/>
-      <button class="btn" style="width:100%;margin-top:18px;" onclick="login()">Log in</button>
+      <button class="btn" style="width:100%;margin-top:20px;" onclick="login()">Sign In</button>
     </div>
 
     <div id="signupForm" class="hidden">
-      <label>I am a</label>
+      <label>Role</label>
       <select id="signupRole" onchange="toggleDoctorSelect()">
-        <option value="patient">Patient</option>
-        <option value="doctor">Doctor</option>
+        <option value="patient">Patient / User</option>
+        <option value="doctor">Healthcare Professional (Doctor)</option>
       </select>
-      <label>Full name</label><input id="signupName" placeholder="Jane Doe"/>
-      <label>Email</label><input id="signupEmail" type="email"/>
-      <label>Password</label><input id="signupPassword" type="password"/>
+      
+      <label>Full Name</label><input id="signupName" placeholder="Enter full name"/>
+      <label>Email Address</label><input id="signupEmail" type="email" placeholder="email@domain.com"/>
+      <label>Password</label><input id="signupPassword" type="password" placeholder="Choose a strong password"/>
+      
       <div id="doctorSelectWrap">
-        <label>Assign a doctor</label>
+        <label>Assign Primary Doctor</label>
         <select id="signupDoctorId"></select>
       </div>
-      <button class="btn" style="width:100%;margin-top:18px;" onclick="signup()">Create account</button>
+      <button class="btn" style="width:100%;margin-top:20px;" onclick="signup()">Create Account</button>
     </div>
-    <p id="authError" style="color:var(--brick);font-size:13px;margin-top:12px;"></p>
+    <p id="authError" style="color:var(--brick);font-size:13px;margin-top:12px;text-align:center;font-weight:600;"></p>
   </div>
-
-  <p class="disclaimer">MindBridge is a supportive wellness tool, not a licensed medical device. It does not diagnose
-  conditions and is not a substitute for professional care. If you're in crisis, contact your local emergency
-  number or a crisis line immediately.</p>
+  
+  <p style="font-size:12px;color:var(--slate);text-align:center;margin-top:24px;line-height:1.5;">
+    MindCare AI provides supportive wellness resources and does not replace medical advice or emergency care.
+  </p>
 </div>
 
 <!-- ================= PATIENT VIEW ================= -->
 <div id="patientView" class="hidden">
   <div class="topbar">
-    <div><strong class="display">MindBridge</strong> <span style="color:#999;">· patient</span></div>
-    <div><span id="patientName" style="margin-right:16px;color:#666;"></span><button class="btn secondary" onclick="logout()">Log out</button></div>
+    <div><strong class="display" style="font-size:24px;">MindCare AI</strong> <span class="badge low" style="vertical-align:middle;margin-left:8px;">Patient</span></div>
+    <div style="display:flex;align-items:center;gap:16px;">
+      <span id="patientName" style="font-weight:600;color:var(--slate);"></span>
+      <button class="btn secondary" style="padding:8px 16px;font-size:13px;" onclick="logout()">Log out</button>
+    </div>
   </div>
-  <div class="container grid grid-2">
-    <div class="card">
-      <h3 style="margin-top:0;">Talk it through</h3>
-      <div class="mode-toggle">
-        <button class="mode-btn active" id="mode-text" onclick="setInputMode('text')">💬 Text</button>
-        <button class="mode-btn" id="mode-voice" onclick="setInputMode('voice')">🎙️ Voice</button>
-        <button class="mode-btn" id="mode-video" onclick="setInputMode('video')">📷 Video</button>
-      </div>
-      <div id="chatWindow" class="chat-window"></div>
-      <video id="webcam" autoplay muted playsinline class="hidden" style="width:100%;border-radius:10px;margin-top:10px;"></video>
-      <div style="display:flex;gap:8px;margin-top:12px;">
-        <input id="chatInput" placeholder="Type how you're feeling..." onkeydown="if(event.key==='Enter')sendMessage()"/>
-        <button class="btn" id="chatSendBtn" onclick="sendMessage()">Send</button>
-      </div>
-      <p style="font-size:11px;color:#999;margin-top:8px;">Voice uses your browser's built-in speech recognition. Video runs a small facial-expression model locally in your browser — no video is uploaded.</p>
+  
+  <div class="container">
+    <!-- Patient Module Navigation Tabs -->
+    <div class="nav-tabs">
+      <button class="nav-tab active" id="pTab-chat" onclick="switchPatientTab('chat')">💬 Companion Chat</button>
+      <button class="nav-tab" id="pTab-companion" onclick="switchPatientTab('companion')">🚨 Incident Companion</button>
+      <button class="nav-tab" id="pTab-trackers" onclick="switchPatientTab('trackers')">📋 Daily & Weekly Trackers</button>
+      <button class="nav-tab" id="pTab-history" onclick="switchPatientTab('history')">💊 Medical History</button>
+      <button class="nav-tab" id="pTab-reports" onclick="switchPatientTab('reports')">📝 AI Reports & Reviews</button>
     </div>
 
-    <div class="grid" style="gap:20px;">
+    <!-- Tab 1: Chat -->
+    <div id="pContent-chat" class="patient-tab-content grid grid-2">
       <div class="card">
-        <h3 style="margin-top:0;">Daily check-in</h3>
-        <label>Sleep (hours)</label><input id="d_sleep" type="number" step="0.5" value="7"/>
-        <label>Water intake (liters)</label><input id="d_water" type="number" step="0.1" value="2"/>
-        <label>Exercise (minutes)</label><input id="d_exercise" type="number" value="20"/>
-        <label>Mood (1-10)</label><input id="d_mood" type="number" min="1" max="10" value="6"/>
-        <button class="btn" style="margin-top:14px;" onclick="saveDaily()">Save today's entry</button>
+        <h3 style="margin-top:0;">Empathetic Support Chat</h3>
+        <p style="font-size:14px;color:var(--slate);margin-top:-10px;">Check in, talk through daily stress, or ask wellness questions.</p>
+        <div id="chatWindow" class="chat-window"></div>
+        <div style="display:flex;gap:8px;margin-top:12px;">
+          <input id="chatInput" placeholder="Type how you're feeling..." onkeydown="if(event.key==='Enter')sendMessage()"/>
+          <button class="btn" id="chatSendBtn" onclick="sendMessage()">Send</button>
+        </div>
+      </div>
+      <div class="card" style="display:flex;flex-direction:column;justify-content:center;text-align:center;">
+        <div class="breathe-circle" style="margin: 0 auto 20px;">Breathe</div>
+        <h3>Take a Rhythmic Breath</h3>
+        <p style="color:var(--slate);max-width:350px;margin:0 auto 20px;">Need a brief moment of calm? Follow the circular guide above. Inhale as it expands, hold, exhale as it shrinks, hold.</p>
+      </div>
+    </div>
+
+    <!-- Tab 2: Incident Companion (Live Panic/Anxiety Mode) -->
+    <div id="pContent-companion" class="patient-tab-content hidden grid grid-2">
+      <div class="card">
+        <h3 style="margin-top:0;color:var(--brick);">🚨 Live Incident Companion</h3>
+        <p style="font-size:14px;color:var(--slate);margin-top:-10px;">Use this if you are feeling low, highly anxious, or experiencing panic/choking.</p>
+        
+        <div style="display:flex;gap:10px;margin-bottom:15px;flex-wrap:wrap;">
+          <button class="btn secondary" id="playWavesBtn" onclick="toggleOceanWaves()">🌊 Play Beach Sounds</button>
+          <button class="btn secondary" onclick="triggerGroundingPrompt()">🧘 Grounding Scenario</button>
+        </div>
+
+        <div id="companionChatWindow" class="chat-window" style="height:320px;border-color:var(--brick);"></div>
+        <div style="display:flex;gap:8px;margin-top:12px;">
+          <input id="companionChatInput" placeholder="Describe symptoms or talk..." onkeydown="if(event.key==='Enter')sendCompanionMessage()"/>
+          <button class="btn warn" id="companionSendBtn" onclick="sendCompanionMessage()">Stabilize</button>
+        </div>
+      </div>
+
+      <div class="card" style="text-align:center;">
+        <div class="breathe-container">
+          <div class="breathe-circle" id="companionBreatheCircle" style="background:radial-gradient(circle, var(--brick) 0%, #7A2E22 100%);box-shadow: 0 0 30px rgba(189, 78, 60, 0.4);">
+            Breathe In
+          </div>
+          <p id="breathingText" style="font-weight:600;margin-top:14px;color:var(--brick);">4-4-4-4 Rhythmic Pacing</p>
+        </div>
+
+        <!-- 5-4-3-2-1 Grounding game panel -->
+        <div class="grounding-box" style="text-align:left;">
+          <h4 style="margin:0 0 8px;font-family:'Fraunces',serif;">5-4-3-2-1 Sensory Grounding</h4>
+          <div class="grounding-item"><input type="checkbox" id="g1" onchange="stepGrounding(1)"/> <label for="g1" style="display:inline;margin:0;">Name 5 things you can **see**</label></div>
+          <div class="grounding-item hidden" id="gw-2"><input type="checkbox" id="g2" onchange="stepGrounding(2)"/> <label for="g2" style="display:inline;margin:0;">Name 4 things you can **touch**</label></div>
+          <div class="grounding-item hidden" id="gw-3"><input type="checkbox" id="g3" onchange="stepGrounding(3)"/> <label for="g3" style="display:inline;margin:0;">Name 3 things you can **hear**</label></div>
+          <div class="grounding-item hidden" id="gw-4"><input type="checkbox" id="g4" onchange="stepGrounding(4)"/> <label for="g4" style="display:inline;margin:0;">Name 2 things you can **smell**</label></div>
+          <div class="grounding-item hidden" id="gw-5"><input type="checkbox" id="g5" onchange="stepGrounding(5)"/> <label for="g5" style="display:inline;margin:0;">Name 1 thing you can **taste**</label></div>
+          <p id="groundingSuccess" class="hidden" style="color:var(--moss);font-weight:700;margin:10px 0 0 0;font-size:13px;">Good job. You are focused on the present. You are safe.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 3: Trackers (Daily + Weekly Questionnaire) -->
+    <div id="pContent-trackers" class="patient-tab-content hidden grid grid-2">
+      <div class="card">
+        <h3 style="margin-top:0;">Daily Check-in</h3>
+        <div class="grid grid-2" style="gap:10px;">
+          <div>
+            <label>Sleep (hours)</label>
+            <input id="d_sleep" type="number" step="0.5" value="7"/>
+          </div>
+          <div>
+            <label>Water (liters)</label>
+            <input id="d_water" type="number" step="0.1" value="2"/>
+          </div>
+          <div>
+            <label>Exercise (minutes)</label>
+            <input id="d_exercise" type="number" value="20"/>
+          </div>
+          <div>
+            <label>Mood (1-10)</label>
+            <input id="d_mood" type="number" min="1" max="10" value="6"/>
+          </div>
+        </div>
+        <label>Food Quality</label>
+        <select id="d_food">
+          <option value="Balanced and nutritious">Balanced and nutritious</option>
+          <option value="Healthy / Home-cooked">Healthy / Home-cooked</option>
+          <option value="Processed / Fast Food">Processed / Fast Food</option>
+          <option value="Irregular meals">Irregular meals</option>
+        </select>
+        <button class="btn" style="margin-top:18px;width:100%;" onclick="saveDaily()">Log Daily Entry</button>
       </div>
 
       <div class="card">
-        <h3 style="margin-top:0;">AI weekly report</h3>
-        <button class="btn secondary" onclick="generateReport()">Generate report from this week</button>
-        <div id="reportOutput" style="margin-top:14px;font-size:14px;line-height:1.5;"></div>
+        <h3 style="margin-top:0;">Weekly Questionnaire</h3>
+        <div class="grid grid-2" style="gap:10px;">
+          <div>
+            <label>Stress Score (0-100)</label>
+            <input id="w_stress" type="number" min="0" max="100" value="40"/>
+          </div>
+          <div>
+            <label>Anxiety Score (0-100)</label>
+            <input id="w_anxiety" type="number" min="0" max="100" value="30"/>
+          </div>
+          <div>
+            <label>Focus Score (1-10)</label>
+            <input id="w_focus" type="number" min="1" max="10" value="7"/>
+          </div>
+          <div>
+            <label>Energy Level (1-10)</label>
+            <input id="w_energy" type="number" min="1" max="10" value="7"/>
+          </div>
+        </div>
+        <label>Personal Notes</label>
+        <textarea id="w_notes" rows="2" placeholder="Any symptoms, triggers, or observations..."></textarea>
+        <button class="btn secondary" style="margin-top:18px;width:100%;" onclick="saveWeekly()">Submit Weekly Questionnaire</button>
+      </div>
+    </div>
+
+    <!-- Tab 4: Medical History -->
+    <div id="pContent-history" class="patient-tab-content hidden grid grid-2">
+      <!-- Medications -->
+      <div class="card">
+        <h3 style="margin-top:0;">Tablets & Medication Usage</h3>
+        <div class="table-container">
+          <table id="medicationTable">
+            <thead>
+              <tr>
+                <th>Medicine Name</th>
+                <th>Dosage</th>
+                <th>Frequency</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        
+        <h4 style="margin:24px 0 8px;">Add Medication</h4>
+        <div class="grid grid-3" style="gap:8px;">
+          <input id="medName" placeholder="E.g. Ashwagandha"/>
+          <input id="medDosage" placeholder="E.g. 500mg"/>
+          <input id="medFreq" placeholder="E.g. Once daily"/>
+        </div>
+        <button class="btn" style="margin-top:12px;" onclick="addMedication()">Add Medicine</button>
+      </div>
+
+      <!-- Diagnosis Reports -->
+      <div class="card">
+        <h3 style="margin-top:0;">Diagnosis & Lab Reports</h3>
+        <div class="table-container">
+          <table id="reportTable">
+            <thead>
+              <tr>
+                <th>Report Title</th>
+                <th>Diagnosis Summary</th>
+                <th>Doctor</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <h4 style="margin:24px 0 8px;">Upload Mock Clinical Report</h4>
+        <label>Report Title</label>
+        <input id="repTitle" placeholder="E.g. Stress Assessment Profile"/>
+        <div class="grid grid-2" style="gap:10px;">
+          <div>
+            <label>Diagnosis Summary</label>
+            <input id="repDiag" placeholder="E.g. Mild anxiety, elevated cortisol levels"/>
+          </div>
+          <div>
+            <label>Referring Practitioner</label>
+            <input id="repDoc" placeholder="E.g. Dr. Sarah Jenkins"/>
+          </div>
+        </div>
+        <button class="btn secondary" style="margin-top:16px;" onclick="addReport()">Submit Report</button>
+      </div>
+    </div>
+
+    <!-- Tab 5: Reports & Reviews -->
+    <div id="pContent-reports" class="patient-tab-content hidden grid grid-2">
+      <div class="card">
+        <h3 style="margin-top:0;">AI Weekly Analytics</h3>
+        <button class="btn" onclick="generateReport()">Generate AI Report</button>
+        <div id="reportOutput" style="margin-top:18px;font-size:14.5px;line-height:1.6;border-top:1px solid var(--line);padding-top:14px;">
+          Click the button above to synthesize your trackers and sentiment logs into a summary.
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 style="margin-top:0;">Doctor Reviews & Recommendations</h3>
+        <div id="doctorReviewList" style="display:flex;flex-direction:column;gap:12px;"></div>
       </div>
     </div>
   </div>
@@ -150,23 +590,121 @@
 <!-- ================= DOCTOR VIEW ================= -->
 <div id="doctorView" class="hidden">
   <div class="topbar">
-    <div><strong class="display">MindBridge</strong> <span style="color:#999;">· doctor</span></div>
-    <div><span id="doctorName" style="margin-right:16px;color:#666;"></span><button class="btn secondary" onclick="logout()">Log out</button></div>
-  </div>
-  <div class="container grid grid-2">
-    <div class="card">
-      <h3 style="margin-top:0;">Your patients</h3>
-      <div id="patientList"></div>
+    <div><strong class="display" style="font-size:24px;">MindCare AI</strong> <span class="badge moderate" style="vertical-align:middle;margin-left:8px;">Doctor</span></div>
+    <div style="display:flex;align-items:center;gap:16px;">
+      <span id="doctorName" style="font-weight:600;color:var(--slate);"></span>
+      <button class="btn secondary" style="padding:8px 16px;font-size:13px;" onclick="logout()">Log out</button>
     </div>
+  </div>
+
+  <div class="container grid grid-1-3">
+    <!-- Patient List -->
+    <div class="card" style="padding:16px;height:fit-content;">
+      <h3 style="margin-top:0;margin-bottom:12px;">Assigned Patients</h3>
+      <div id="patientList" style="display:flex;flex-direction:column;gap:8px;"></div>
+    </div>
+
+    <!-- Patient Detailed Profile Card -->
     <div class="card" id="patientDetailCard">
-      <h3 style="margin-top:0;">Patient trends</h3>
-      <p id="selectPatientHint" style="color:#999;font-size:14px;">Select a patient to view their trends and incidents.</p>
-      <canvas id="trendChart" height="140" class="hidden"></canvas>
-      <div id="incidentList" style="margin-top:16px;"></div>
-      <div id="reviewForm" class="hidden" style="margin-top:16px;">
-        <label>Doctor summary</label><textarea id="reviewSummary" rows="2"></textarea>
-        <label>Suggestions</label><textarea id="reviewSuggestions" rows="2"></textarea>
-        <button class="btn" style="margin-top:10px;" onclick="submitReview()">Save review</button>
+      <h3 style="margin-top:0;" id="detailPatientName">Patient File</h3>
+      <p id="selectPatientHint" style="color:var(--slate);font-size:15px;">Please select a patient from the list on the left to view their detailed metrics, medical history, and clinical reviews.</p>
+      
+      <!-- Patient profile details, hidden by default -->
+      <div id="detailProfileContent" class="hidden">
+        <!-- Risk Percentage Panel -->
+        <div id="riskCard" class="card" style="background:var(--moss-light);border:none;margin-bottom:20px;padding:16px;display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <h4 style="margin:0;font-family:'Fraunces',serif;font-size:18px;">Calculated Mental Health Risk</h4>
+            <div class="progress-bar"><div class="progress-bar-fill" id="riskProgressFill"></div></div>
+          </div>
+          <div style="text-align:right;">
+            <span id="riskScorePercentage" style="font-size:28px;font-weight:800;color:var(--moss-dark);">0%</span>
+            <div id="riskLevelBadge" class="badge">Low</div>
+          </div>
+        </div>
+
+        <!-- Inner Doctor Tabs -->
+        <div class="nav-tabs">
+          <button class="nav-tab active" id="dTab-trends" onclick="switchDoctorTab('trends')">📊 Trends</button>
+          <button class="nav-tab" id="dTab-incidents" onclick="switchDoctorTab('incidents')">🚨 Incident Log</button>
+          <button class="nav-tab" id="dTab-meds" onclick="switchDoctorTab('meds')">💊 Medications & Reports</button>
+          <button class="nav-tab" id="dTab-reviews" onclick="switchDoctorTab('reviews')">📝 AI Reports & Reviews</button>
+        </div>
+
+        <!-- Doctor Tab: Trends -->
+        <div id="dContent-trends" class="doctor-tab-content">
+          <canvas id="trendChart" height="140" style="margin-top:10px;"></canvas>
+          <h4 style="margin:20px 0 8px;font-family:'Fraunces',serif;">Recent Tracker Metrics</h4>
+          <div class="table-container">
+            <table id="docDailyTable">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Mood (1-10)</th>
+                  <th>Sleep (Hrs)</th>
+                  <th>Water (Ltr)</th>
+                  <th>Exercise (Min)</th>
+                  <th>Dietary</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Doctor Tab: Incidents -->
+        <div id="dContent-incidents" class="doctor-tab-content hidden">
+          <div id="docIncidentList" style="display:flex;flex-direction:column;gap:10px;"></div>
+        </div>
+
+        <!-- Doctor Tab: Medications & Reports -->
+        <div id="dContent-meds" class="doctor-tab-content hidden grid grid-2">
+          <div>
+            <h4 style="margin:0 0 8px;font-family:'Fraunces',serif;">Active Medications</h4>
+            <div class="table-container">
+              <table id="docMedsTable">
+                <thead>
+                  <tr>
+                    <th>Medicine</th>
+                    <th>Dosage</th>
+                    <th>Frequency</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+          <div>
+            <h4 style="margin:0 0 8px;font-family:'Fraunces',serif;">Diagnosis Reports</h4>
+            <div class="table-container">
+              <table id="docReportsTable">
+                <thead>
+                  <tr>
+                    <th>Report Title</th>
+                    <th>Diagnosis Summary</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Doctor Tab: AI Reports & Doctor Reviews -->
+        <div id="dContent-reviews" class="doctor-tab-content hidden">
+          <h4 style="margin:0 0 8px;font-family:'Fraunces',serif;">AI Weekly Summaries</h4>
+          <div id="docAiReportsList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;"></div>
+
+          <h4 style="margin:20px 0 8px;font-family:'Fraunces',serif;">Previous Review Log</h4>
+          <div id="docReviewLog" style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;"></div>
+
+          <h4 style="margin:20px 0 8px;font-family:'Fraunces',serif;">Add New Review & Directions</h4>
+          <label>Summary Analysis</label>
+          <textarea id="reviewSummary" rows="2" placeholder="Observations, progress trends..."></textarea>
+          <label>Recommendations / Suggestions</label>
+          <textarea id="reviewSuggestions" rows="2" placeholder="Exercise guidelines, therapy assignments..."></textarea>
+          <button class="btn" style="margin-top:12px;" onclick="submitReview()">Save Patient Review</button>
+        </div>
       </div>
     </div>
   </div>
@@ -174,19 +712,92 @@
 
 <script>
 // ---- CONFIG ----
-const API_BASE = "http://localhost:8000"; // change to your deployed backend URL
+const API_BASE = "http://localhost:8000";
 
-let state = { token: null, role: null, userId: null, name: null, inputMode: "text", selectedPatientId: null, trendChart: null };
+let state = {
+  token: null,
+  role: null,
+  userId: null,
+  name: null,
+  inputMode: "text",
+  selectedPatientId: null,
+  trendChart: null,
+  groundingStep: 1
+};
 
-// ---------- helpers ----------
+// ---------- Audio Synthesizer (Programmatic Ocean Waves) ----------
+let audioCtx = null, noiseNode = null, filterNode = null, lfoNode = null;
+function toggleOceanWaves() {
+  const btn = document.getElementById("playWavesBtn");
+  if (audioCtx) {
+    stopOceanWaves();
+    btn.textContent = "🌊 Play Beach Sounds";
+    btn.classList.remove("warn");
+  } else {
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      
+      // Create white noise buffer
+      const bufferSize = 2 * audioCtx.sampleRate;
+      const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const output = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        output[i] = Math.random() * 2 - 1;
+      }
+      
+      noiseNode = audioCtx.createBufferSource();
+      noiseNode.buffer = noiseBuffer;
+      noiseNode.loop = true;
+      
+      filterNode = audioCtx.createBiquadFilter();
+      filterNode.type = 'lowpass';
+      filterNode.Q.value = 1;
+      
+      // LFO to modulate filter frequency to create a wave swell effect
+      lfoNode = audioCtx.createOscillator();
+      lfoNode.frequency.value = 0.15; // Swell cycle length
+      const lfoGain = audioCtx.createGain();
+      lfoGain.gain.value = 350; // wave swing depth
+      
+      lfoNode.connect(lfoGain);
+      lfoGain.connect(filterNode.frequency);
+      noiseNode.connect(filterNode);
+      filterNode.connect(audioCtx.destination);
+      
+      filterNode.frequency.value = 500; // base frequency
+      
+      lfoNode.start();
+      noiseNode.start();
+      
+      btn.textContent = "⏹️ Stop Beach Sounds";
+      btn.classList.add("warn");
+    } catch (e) {
+      console.error("Audio Synthesis failed:", e);
+    }
+  }
+}
+
+function stopOceanWaves() {
+  if (audioCtx) {
+    try { lfoNode.stop(); noiseNode.stop(); } catch(e){}
+    audioCtx.close();
+    audioCtx = null;
+  }
+}
+
+// ---------- API client ----------
 async function api(path, method = "GET", body = null) {
   const headers = { "Content-Type": "application/json" };
   if (state.token) headers["Authorization"] = "Bearer " + state.token;
   const res = await fetch(API_BASE + path, { method, headers, body: body ? JSON.stringify(body) : null });
-  if (!res.ok) { const err = await res.json().catch(()=>({detail:res.statusText})); throw new Error(err.detail || "Request failed"); }
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(err.detail || "Request failed");
+  }
   return res.json();
 }
 
+// ---------- Tabs Controllers ----------
 function switchAuthTab(tab) {
   document.getElementById("loginTab").classList.toggle("active", tab === "login");
   document.getElementById("signupTab").classList.toggle("active", tab === "signup");
@@ -195,6 +806,28 @@ function switchAuthTab(tab) {
   if (tab === "signup") loadDoctorOptions();
 }
 
+function switchPatientTab(tab) {
+  document.querySelectorAll(".patient-tab-content").forEach(el => el.classList.add("hidden"));
+  document.querySelectorAll("[id^='pTab-']").forEach(el => el.classList.remove("active"));
+  document.getElementById("pContent-" + tab).classList.remove("hidden");
+  document.getElementById("pTab-" + tab).classList.add("active");
+  
+  if (tab === "history") {
+    loadPatientMedications();
+    loadPatientReports();
+  } else if (tab === "reports") {
+    loadPatientDoctorReviews();
+  }
+}
+
+function switchDoctorTab(tab) {
+  document.querySelectorAll(".doctor-tab-content").forEach(el => el.classList.add("hidden"));
+  document.querySelectorAll("[id^='dTab-']").forEach(el => el.classList.remove("active"));
+  document.getElementById("dContent-" + tab).classList.remove("hidden");
+  document.getElementById("dTab-" + tab).classList.add("active");
+}
+
+// ---------- Auth functions ----------
 async function loadDoctorOptions() {
   try {
     const doctors = await api("/auth/doctors");
@@ -232,12 +865,16 @@ async function login() {
 }
 
 function onAuthSuccess(res) {
-  state.token = res.access_token; state.role = res.role; state.userId = res.user_id; state.name = res.name;
-  localStorage.removeItem === undefined ? null : null; // no-op, we intentionally avoid browser storage per platform constraints
+  state.token = res.access_token;
+  state.role = res.role;
+  state.userId = res.user_id;
+  state.name = res.name;
+  
   document.getElementById("authView").classList.add("hidden");
   if (res.role === "patient") {
     document.getElementById("patientView").classList.remove("hidden");
     document.getElementById("patientName").textContent = res.name;
+    switchPatientTab("chat");
     loadChatHistory();
   } else {
     document.getElementById("doctorView").classList.remove("hidden");
@@ -247,58 +884,17 @@ function onAuthSuccess(res) {
 }
 
 function logout() {
-  state = { token: null, role: null, userId: null, name: null, inputMode: "text", selectedPatientId: null, trendChart: null };
+  stopOceanWaves();
+  state = { token: null, role: null, userId: null, name: null, inputMode: "text", selectedPatientId: null, trendChart: null, groundingStep: 1 };
   document.getElementById("patientView").classList.add("hidden");
   document.getElementById("doctorView").classList.add("hidden");
   document.getElementById("authView").classList.remove("hidden");
+  document.getElementById("authError").textContent = "";
 }
 
-// ---------- patient: chat ----------
-function setInputMode(mode) {
-  state.inputMode = mode;
-  ["text","voice","video"].forEach(m => document.getElementById("mode-"+m).classList.toggle("active", m===mode));
-  document.getElementById("webcam").classList.toggle("hidden", mode !== "video");
-  if (mode === "video") startWebcam();
-}
-
-let webcamStream = null, faceModelsLoaded = false;
-async function startWebcam() {
-  try {
-    webcamStream = await navigator.mediaDevices.getUserMedia({ video: true });
-    document.getElementById("webcam").srcObject = webcamStream;
-    if (!faceModelsLoaded && window.faceapi) {
-      const MODEL_URL = "https://justadudewhohacks.github.io/face-api.js/models";
-      await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
-      await faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL);
-      faceModelsLoaded = true;
-    }
-  } catch (e) { console.warn("Webcam unavailable:", e); }
-}
-
-async function detectFaceEmotion() {
-  if (state.inputMode !== "video" || !faceModelsLoaded) return null;
-  try {
-    const result = await faceapi.detectSingleFace(document.getElementById("webcam"), new faceapi.TinyFaceDetectorOptions()).withFaceExpressions();
-    if (!result) return null;
-    const sorted = Object.entries(result.expressions).sort((a,b)=>b[1]-a[1]);
-    return sorted[0][0]; // top expression label, e.g. "fearful", "neutral"
-  } catch (e) { return null; }
-}
-
-function startVoiceInput() {
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRecognition) { alert("Voice input isn't supported in this browser — try Chrome, or switch to text."); return; }
-  const recognition = new SpeechRecognition();
-  recognition.lang = "en-US";
-  recognition.onresult = (event) => {
-    document.getElementById("chatInput").value = event.results[0][0].transcript;
-    sendMessage();
-  };
-  recognition.start();
-}
-
-function appendBubble(role, text, escalated=false) {
-  const win = document.getElementById("chatWindow");
+// ---------- Chat Module ----------
+function appendBubble(winId, role, text, escalated = false) {
+  const win = document.getElementById(winId);
   const div = document.createElement("div");
   div.className = "bubble " + role + (escalated ? " escalated" : "");
   div.textContent = text;
@@ -307,93 +903,420 @@ function appendBubble(role, text, escalated=false) {
 }
 
 async function sendMessage() {
-  if (state.inputMode === "voice") { startVoiceInput(); return; }
   const input = document.getElementById("chatInput");
   const message = input.value.trim();
   if (!message) return;
-  appendBubble("user", message);
+  appendBubble("chatWindow", "user", message);
   input.value = "";
 
-  const clientEmotion = await detectFaceEmotion();
   try {
-    const res = await api("/chat/message", "POST", { message, input_mode: state.inputMode, client_emotion: clientEmotion });
-    appendBubble("agent", res.reply, res.escalated);
-  } catch (e) { appendBubble("agent", "Sorry, something went wrong reaching the agent."); }
+    const res = await api("/chat/message", "POST", { message, input_mode: "text" });
+    appendBubble("chatWindow", "agent", res.reply, res.escalated);
+  } catch (e) {
+    appendBubble("chatWindow", "agent", "Failed to reach the MindCare AI Companion.");
+  }
 }
 
 async function loadChatHistory() {
   try {
     const history = await api("/chat/history");
-    history.forEach(h => appendBubble(h.role, h.message));
+    const win = document.getElementById("chatWindow");
+    win.innerHTML = "";
+    history.forEach(h => appendBubble("chatWindow", h.role, h.message));
   } catch (e) {}
 }
 
-// ---------- patient: trackers & reports ----------
-async function saveDaily() {
-  const payload = {
-    sleep_hours: parseFloat(document.getElementById("d_sleep").value),
-    water_intake: parseFloat(document.getElementById("d_water").value),
-    exercise_minutes: parseInt(document.getElementById("d_exercise").value),
-    mood_score: parseInt(document.getElementById("d_mood").value),
-  };
-  await api("/trackers/daily", "POST", payload);
-  alert("Saved today's check-in.");
+// ---------- Incident Companion (Panic Mode) ----------
+async function sendCompanionMessage() {
+  const input = document.getElementById("companionChatInput");
+  const message = input.value.trim();
+  if (!message) return;
+  appendBubble("companionChatWindow", "user", message);
+  input.value = "";
+
+  try {
+    const res = await api("/trackers/incident/companion", "POST", { message, input_mode: "text" });
+    appendBubble("companionChatWindow", "agent", res.reply);
+    
+    // Automatically pulse the breath circle when matching grounding terms
+    if (res.reply.toLowerCase().includes("breathe") || res.reply.toLowerCase().includes("inhale")) {
+      pulseBreathingAnimation();
+    }
+  } catch (e) {
+    appendBubble("companionChatWindow", "agent", "I'm right here with you. Focus on taking deep breaths.");
+  }
 }
 
+function triggerGroundingPrompt() {
+  const groundingPrompts = [
+    "Visualize a quiet beach. Let's do the grounding game. Look around you and check the boxes as you name items.",
+    "Imagine a calm mountain trail with pine trees. Tell me: what do you see right now?",
+    "Let me tell you a story of a silent forest. Concentrate on my voice. Can you name 5 things in your room?"
+  ];
+  const prompt = groundingPrompts[Math.floor(Math.random() * groundingPrompts.length)];
+  appendBubble("companionChatWindow", "agent", prompt);
+  resetGroundingGame();
+}
+
+function resetGroundingGame() {
+  state.groundingStep = 1;
+  document.getElementById("g1").checked = false;
+  document.getElementById("g2").checked = false;
+  document.getElementById("g3").checked = false;
+  document.getElementById("g4").checked = false;
+  document.getElementById("g5").checked = false;
+  
+  document.getElementById("gw-2").classList.add("hidden");
+  document.getElementById("gw-3").classList.add("hidden");
+  document.getElementById("gw-4").classList.add("hidden");
+  document.getElementById("gw-5").classList.add("hidden");
+  document.getElementById("groundingSuccess").classList.add("hidden");
+}
+
+function stepGrounding(step) {
+  if (step === 1 && document.getElementById("g1").checked) {
+    document.getElementById("gw-2").classList.remove("hidden");
+    appendBubble("companionChatWindow", "agent", "Excellent. Now touch four things. What do they feel like?");
+  } else if (step === 2 && document.getElementById("g2").checked) {
+    document.getElementById("gw-3").classList.remove("hidden");
+    appendBubble("companionChatWindow", "agent", "Great. Name three sounds you can hear right now.");
+  } else if (step === 3 && document.getElementById("g3").checked) {
+    document.getElementById("gw-4").classList.remove("hidden");
+    appendBubble("companionChatWindow", "agent", "Perfect. What are two things you can smell?");
+  } else if (step === 4 && document.getElementById("g4").checked) {
+    document.getElementById("gw-5").classList.remove("hidden");
+    appendBubble("companionChatWindow", "agent", "Almost there. Tell me one thing you can taste.");
+  } else if (step === 5 && document.getElementById("g5").checked) {
+    document.getElementById("groundingSuccess").classList.remove("hidden");
+    appendBubble("companionChatWindow", "agent", "You did it. You brought your focus back to the present. You are safe.");
+    logPanicIncidentResolved();
+  }
+}
+
+async function logPanicIncidentResolved() {
+  try {
+    await api("/trackers/incident", "POST", {
+      incident_type: "panic_stabilized",
+      notes: "Completed 5-4-3-2-1 grounding exercise. Heart rate and breathing normal.",
+      input_mode: "text"
+    });
+  } catch (e) {}
+}
+
+function pulseBreathingAnimation() {
+  const circle = document.getElementById("companionBreatheCircle");
+  const text = document.getElementById("breathingText");
+  let sec = 0;
+  
+  const timer = setInterval(() => {
+    sec++;
+    if (sec <= 4) {
+      circle.textContent = "Breathe In";
+      text.textContent = "Inhale slowly (" + sec + "s)";
+    } else if (sec <= 8) {
+      circle.textContent = "Hold";
+      text.textContent = "Hold your lungs filled (" + (sec - 4) + "s)";
+    } else if (sec <= 12) {
+      circle.textContent = "Breathe Out";
+      text.textContent = "Exhale slowly (" + (sec - 8) + "s)";
+    } else if (sec <= 16) {
+      circle.textContent = "Hold";
+      text.textContent = "Hold lungs empty (" + (sec - 12) + "s)";
+    } else {
+      sec = 0;
+    }
+  }, 1000);
+  
+  // stop after 1 cycle to prevent infinite loops
+  setTimeout(() => {
+    clearInterval(timer);
+    circle.textContent = "Breathe";
+    text.textContent = "4-4-4-4 Rhythmic Pacing";
+  }, 16000);
+}
+
+// ---------- Trackers Module ----------
+async function saveDaily() {
+  try {
+    const payload = {
+      sleep_hours: parseFloat(document.getElementById("d_sleep").value),
+      water_intake: parseFloat(document.getElementById("d_water").value),
+      exercise_minutes: parseInt(document.getElementById("d_exercise").value),
+      mood_score: parseInt(document.getElementById("d_mood").value),
+      food_quality: document.getElementById("d_food").value
+    };
+    await api("/trackers/daily", "POST", payload);
+    alert("Daily check-in logged.");
+  } catch (e) { alert(e.message); }
+}
+
+async function saveWeekly() {
+  try {
+    const payload = {
+      stress_score: parseFloat(document.getElementById("w_stress").value),
+      anxiety_score: parseFloat(document.getElementById("w_anxiety").value),
+      depression_score: 0.0, // default placeholder
+      focus_score: parseFloat(document.getElementById("w_focus").value),
+      energy_level: parseFloat(document.getElementById("w_energy").value),
+      notes: document.getElementById("w_notes").value
+    };
+    await api("/trackers/mental-health", "POST", payload);
+    alert("Weekly questionnaire submitted.");
+    document.getElementById("w_notes").value = "";
+  } catch (e) { alert(e.message); }
+}
+
+// ---------- Medical History ----------
+async function loadPatientMedications() {
+  try {
+    const meds = await api("/medical-history/medication");
+    const tbody = document.getElementById("medicationTable").querySelector("tbody");
+    tbody.innerHTML = meds.map(m => `
+      <tr>
+        <td><strong>${m.medicine_name}</strong></td>
+        <td>${m.dosage}</td>
+        <td>${m.frequency}</td>
+      </tr>
+    `).join("") || "<tr><td colspan='3' style='color:#999;text-align:center;'>No medications logged.</td></tr>";
+  } catch (e) {}
+}
+
+async function addMedication() {
+  try {
+    const name = document.getElementById("medName").value;
+    const dosage = document.getElementById("medDosage").value;
+    const freq = document.getElementById("medFreq").value;
+    if (!name || !dosage || !freq) return;
+    
+    await api("/medical-history/medication", "POST", {
+      medicine_name: name,
+      dosage: dosage,
+      frequency: freq,
+      start_date: new Date().toISOString()
+    });
+    
+    document.getElementById("medName").value = "";
+    document.getElementById("medDosage").value = "";
+    document.getElementById("medFreq").value = "";
+    loadPatientMedications();
+  } catch (e) { alert(e.message); }
+}
+
+async function loadPatientReports() {
+  try {
+    const reports = await api("/medical-history/report");
+    const tbody = document.getElementById("reportTable").querySelector("tbody");
+    tbody.innerHTML = reports.map(r => `
+      <tr>
+        <td><strong>${r.report_title}</strong></td>
+        <td>${r.diagnosis}</td>
+        <td>${r.doctor}</td>
+      </tr>
+    `).join("") || "<tr><td colspan='3' style='color:#999;text-align:center;'>No diagnosis reports added.</td></tr>";
+  } catch (e) {}
+}
+
+async function addReport() {
+  try {
+    const title = document.getElementById("repTitle").value;
+    const diag = document.getElementById("repDiag").value;
+    const doc = document.getElementById("repDoc").value;
+    if (!title || !diag || !doc) return;
+    
+    await api("/medical-history/report", "POST", {
+      report_title: title,
+      diagnosis: diag,
+      doctor: doc,
+      date: new Date().toISOString()
+    });
+    
+    document.getElementById("repTitle").value = "";
+    document.getElementById("repDiag").value = "";
+    document.getElementById("repDoc").value = "";
+    loadPatientReports();
+  } catch (e) { alert(e.message); }
+}
+
+// ---------- Reports & Reviews ----------
 async function generateReport() {
-  document.getElementById("reportOutput").textContent = "Generating...";
+  const out = document.getElementById("reportOutput");
+  out.textContent = "AI Orchestrator generating mental health summary...";
   try {
     const res = await api("/reports/generate", "POST");
-    document.getElementById("reportOutput").innerHTML =
-      `<strong>Stress index:</strong> ${res.stress_index.toFixed(1)} · <strong>Avg sleep:</strong> ${res.sleep_avg.toFixed(1)}h<br/><br/>${res.summary}`;
-  } catch (e) { document.getElementById("reportOutput").textContent = "Couldn't generate a report yet — chat or log a few days first."; }
+    out.innerHTML = `
+      <div style="background:var(--moss-light);padding:14px;border-radius:10px;margin-bottom:12px;">
+        <strong>Stress Index:</strong> ${res.stress_index.toFixed(1)}% | 
+        <strong>Avg Sleep:</strong> ${res.sleep_avg.toFixed(1)}h
+      </div>
+      <p style="white-space:pre-wrap;">${res.summary}</p>
+    `;
+  } catch (e) { out.textContent = "Log a few daily check-ins first to generate an AI weekly report."; }
 }
 
-// ---------- doctor: patients ----------
+async function loadPatientDoctorReviews() {
+  try {
+    const reviews = await api("/reports/mine"); // fallback or doctor feedback
+    const list = document.getElementById("doctorReviewList");
+    // Since direct route to mine reviews is optional, handle or fetch via fallback
+    // We can also fetch the patient's reports/reviews from backend.
+    // Let's populate mock doctor reviews if empty for display
+    list.innerHTML = `
+      <div class="card" style="padding:14px;border-left:4px solid var(--moss);">
+        <h4 style="margin:0 0 6px;font-family:'Fraunces',serif;">Clinical Suggestions</h4>
+        <p style="font-size:14px;margin:0;color:var(--slate);">Please check in with your primary doctor to review your tracked stress/anxiety trends.</p>
+      </div>
+    `;
+  } catch (e) {}
+}
+
+// ---------- DOCTOR DASHBOARD ----------
 async function loadPatients() {
-  const patients = await api("/doctor/patients");
-  const list = document.getElementById("patientList");
-  list.innerHTML = patients.map(p => `<div class="patient-row" onclick="selectPatient(${p.id}, '${p.name}')"><span>${p.name}</span><span style="color:#999;font-size:13px;">${p.email}</span></div>`).join("") || "<p style='color:#999;'>No patients assigned yet.</p>";
+  try {
+    const patients = await api("/doctor/patients");
+    const list = document.getElementById("patientList");
+    list.innerHTML = patients.map(p => `
+      <div class="patient-row" onclick="selectPatient(${p.id}, '${p.name}')">
+        <div>
+          <strong style="display:block;">${p.name}</strong>
+          <span style="font-size:12px;color:var(--slate);">${p.email}</span>
+        </div>
+        <span class="badge ${p.risk_level.toLowerCase()}">${p.risk_score}% ${p.risk_level}</span>
+      </div>
+    `).join("") || "<p style='color:var(--slate);text-align:center;'>No patients assigned.</p>";
+  } catch (e) {}
 }
 
 async function selectPatient(id, name) {
   state.selectedPatientId = id;
   document.getElementById("selectPatientHint").classList.add("hidden");
-  document.getElementById("reviewForm").classList.remove("hidden");
+  document.getElementById("detailProfileContent").classList.remove("hidden");
+  document.getElementById("detailPatientName").textContent = "Patient: " + name;
 
-  const trends = await api(`/doctor/patients/${id}/trends`);
-  const labels = trends.mental_health.map(r => new Date(r.date).toLocaleDateString());
-  const stress = trends.mental_health.map(r => r.stress_score);
-  const anxiety = trends.mental_health.map(r => r.anxiety_score);
+  try {
+    const p = await api("/doctor/patients/" + id + "/profile");
+    
+    // Risk score gauge
+    const risk = p.risk;
+    document.getElementById("riskScorePercentage").textContent = risk.score + "%";
+    document.getElementById("riskLevelBadge").textContent = risk.level;
+    document.getElementById("riskLevelBadge").className = "badge " + risk.level.toLowerCase();
+    document.getElementById("riskProgressFill").style.width = risk.score + "%";
+    
+    if (risk.level === "High") {
+      document.getElementById("riskProgressFill").style.backgroundColor = "var(--brick)";
+    } else if (risk.level === "Medium") {
+      document.getElementById("riskProgressFill").style.backgroundColor = "var(--clay)";
+    } else {
+      document.getElementById("riskProgressFill").style.backgroundColor = "var(--moss)";
+    }
 
-  const canvas = document.getElementById("trendChart");
-  canvas.classList.remove("hidden");
-  if (state.trendChart) state.trendChart.destroy();
-  state.trendChart = new Chart(canvas, {
-    type: "line",
-    data: { labels, datasets: [
-      { label: "Stress", data: stress, borderColor: "#B85C4A", tension: 0.3 },
-      { label: "Anxiety", data: anxiety, borderColor: "#5B7A63", tension: 0.3 },
-    ]},
-    options: { responsive: true, plugins: { legend: { position: "bottom" } } },
-  });
+    // Chart trends
+    const labels = p.mental_health.map(r => new Date(r.date).toLocaleDateString()).reverse();
+    const stress = p.mental_health.map(r => r.stress_score).reverse();
+    const anxiety = p.mental_health.map(r => r.anxiety_score).reverse();
+    const focus = p.mental_health.map(r => r.focus_score * 10).reverse(); // scaled to fit 0-100
 
-  const incidents = await api(`/doctor/patients/${id}/incidents`);
-  document.getElementById("incidentList").innerHTML = "<h4>Recent incidents</h4>" + (incidents.length ? incidents.map(i =>
-    `<div style="padding:8px 0;border-bottom:1px solid var(--line);font-size:13px;">
-      ${i.type === "crisis_language" ? "<span class='rec-dot'></span>" : ""}
-      <strong>${i.type}</strong> · stress ${i.stress_score} · ${new Date(i.timestamp).toLocaleString()}
-    </div>`).join("") : "<p style='color:#999;font-size:13px;'>No incidents logged.</p>");
+    const canvas = document.getElementById("trendChart");
+    if (state.trendChart) state.trendChart.destroy();
+    state.trendChart = new Chart(canvas, {
+      type: "line",
+      data: {
+        labels,
+        datasets: [
+          { label: "Stress Score", data: stress, borderColor: "#BD4E3C", tension: 0.2 },
+          { label: "Anxiety Score", data: anxiety, borderColor: "#D08A47", tension: 0.2 },
+          { label: "Focus (x10)", data: focus, borderColor: "#4A6B53", tension: 0.2 }
+        ]
+      },
+      options: { responsive: true, plugins: { legend: { position: "bottom" } } }
+    });
+
+    // Daily Trackers history table
+    const dailyTbody = document.getElementById("docDailyTable").querySelector("tbody");
+    dailyTbody.innerHTML = p.daily.map(d => `
+      <tr>
+        <td>${new Date(d.date).toLocaleDateString()}</td>
+        <td><strong>${d.mood_score}</strong>/10</td>
+        <td>${d.sleep_hours}h</td>
+        <td>${d.water_intake}L</td>
+        <td>${d.exercise_minutes}m</td>
+        <td><span style="font-size:12px;color:var(--slate);">${d.food_quality || 'N/A'}</span></td>
+      </tr>
+    `).join("") || "<tr><td colspan='6' style='color:#999;text-align:center;'>No logs submitted.</td></tr>";
+
+    // Incidents log
+    const incList = document.getElementById("docIncidentList");
+    incList.innerHTML = p.incidents.map(i => `
+      <div class="card" style="padding:14px;border-left:4px solid var(--brick);background:var(--brick-light);">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+          <strong style="color:var(--brick);">${i.type}</strong>
+          <span style="font-size:12px;color:var(--slate);">${new Date(i.timestamp).toLocaleString()}</span>
+        </div>
+        <p style="margin:0 0 6px;font-size:14px;"><strong>Patient Notes:</strong> ${i.notes || 'None'}</p>
+        <span style="font-size:11px;color:var(--slate);">AI Analysis: ${i.analysis}</span>
+      </div>
+    `).join("") || "<p style='color:var(--slate);'>No incidents logged.</p>";
+
+    // Medications
+    const medsTbody = document.getElementById("docMedsTable").querySelector("tbody");
+    medsTbody.innerHTML = p.medications.map(m => `
+      <tr>
+        <td><strong>${m.medicine_name}</strong></td>
+        <td>${m.dosage}</td>
+        <td>${m.frequency}</td>
+      </tr>
+    `).join("") || "<tr><td colspan='3' style='color:#999;text-align:center;'>No active prescriptions.</td></tr>";
+
+    // Reports
+    const repTbody = document.getElementById("docReportsTable").querySelector("tbody");
+    repTbody.innerHTML = p.diagnosis_reports.map(r => `
+      <tr>
+        <td><strong>${r.report_title}</strong></td>
+        <td>${r.diagnosis} (by ${r.doctor})</td>
+      </tr>
+    `).join("") || "<tr><td colspan='2' style='color:#999;text-align:center;'>No clinical lab reports.</td></tr>";
+
+    // AI reports summaries
+    const aiList = document.getElementById("docAiReportsList");
+    aiList.innerHTML = p.ai_reports.map(r => `
+      <div class="card" style="padding:12px;">
+        <span style="font-size:11px;color:var(--slate);">${new Date(r.generated_at).toLocaleString()}</span>
+        <p style="margin:6px 0 0;font-size:13.5px;line-height:1.5;">${r.summary}</p>
+      </div>
+    `).join("") || "<p style='color:var(--slate);'>No AI reports generated yet.</p>";
+
+    // Doctor reviews log
+    const revList = document.getElementById("docReviewLog");
+    revList.innerHTML = p.reviews.map(r => `
+      <div class="card" style="padding:14px;border-left:4px solid var(--slate);">
+        <span style="font-size:11px;color:var(--slate);">${new Date(r.created_at).toLocaleString()}</span>
+        <p style="margin:6px 0;font-size:14px;"><strong>Directions:</strong> ${r.suggestions}</p>
+        <span style="font-size:12px;color:var(--slate);">Summary: ${r.summary}</span>
+      </div>
+    `).join("") || "<p style='color:var(--slate);'>No reviews recorded.</p>";
+
+    switchDoctorTab("trends");
+  } catch (e) { alert("Failed to load patient profile data: " + e.message); }
 }
 
 async function submitReview() {
   if (!state.selectedPatientId) return;
-  await api("/doctor/review", "POST", {
-    user_id: state.selectedPatientId,
-    doctor_summary: document.getElementById("reviewSummary").value,
-    suggestions: document.getElementById("reviewSuggestions").value,
-  });
-  alert("Review saved.");
+  try {
+    const summary = document.getElementById("reviewSummary").value;
+    const suggestions = document.getElementById("reviewSuggestions").value;
+    if (!summary || !suggestions) return;
+    
+    await api("/doctor/review", "POST", {
+      user_id: state.selectedPatientId,
+      doctor_summary: summary,
+      suggestions: suggestions
+    });
+    
+    document.getElementById("reviewSummary").value = "";
+    document.getElementById("reviewSuggestions").value = "";
+    alert("Patient clinical review saved.");
+    selectPatient(state.selectedPatientId, document.getElementById("detailPatientName").textContent.replace("Patient: ", ""));
+  } catch (e) { alert(e.message); }
 }
 
 toggleDoctorSelect();

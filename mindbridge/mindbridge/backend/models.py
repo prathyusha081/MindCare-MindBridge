@@ -41,6 +41,7 @@ class DailyTracker(Base):
     water_intake = Column(Float, default=0)
     exercise_minutes = Column(Integer, default=0)
     mood_score = Column(Integer, default=5)  # 1-10
+    food_quality = Column(String, nullable=True)
 
 
 class MentalHealthTracker(Base):
@@ -51,6 +52,8 @@ class MentalHealthTracker(Base):
     stress_score = Column(Float, default=0)
     anxiety_score = Column(Float, default=0)
     depression_score = Column(Float, default=0)
+    focus_score = Column(Float, default=5)
+    energy_level = Column(Float, default=5)
     notes = Column(Text, nullable=True)
 
 
@@ -76,6 +79,7 @@ class IncidentLog(Base):
     stress_score = Column(Float, nullable=True)
     ai_analysis = Column(Text, nullable=True)
     resolved = Column(Boolean, default=False)
+    notes = Column(Text, nullable=True)
     timestamp = Column(DateTime, default=datetime.utcnow)
 
 
@@ -98,3 +102,24 @@ class AuditLog(Base):
     action = Column(String, nullable=False)       # e.g. "view_patient_report"
     target_user_id = Column(Integer, nullable=True)
     timestamp = Column(DateTime, default=datetime.utcnow)
+
+
+class Medication(Base):
+    __tablename__ = "medications"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    medicine_name = Column(String, nullable=False)
+    dosage = Column(String, nullable=False)
+    frequency = Column(String, nullable=False)
+    start_date = Column(DateTime, default=datetime.utcnow)
+
+
+class DiagnosisReport(Base):
+    __tablename__ = "diagnosis_reports"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    report_title = Column(String, nullable=False)
+    diagnosis = Column(Text, nullable=False)
+    doctor = Column(String, nullable=False)
+    date = Column(DateTime, default=datetime.utcnow)
+    file_path = Column(String, nullable=True)
