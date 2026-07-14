@@ -1,5 +1,7 @@
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from database import engine, Base
 import models  # noqa: F401  (ensures models are registered before create_all)
@@ -12,6 +14,11 @@ app = FastAPI(
     description="Agentic AI mental wellness companion — chat, mood tracking, and doctor dashboard.",
     version="1.0.0",
 )
+
+# Create and mount static folder for file uploads
+uploads_dir = os.path.join(os.path.dirname(__file__), "uploads")
+os.makedirs(uploads_dir, exist_ok=True)
+app.mount("/static/uploads", StaticFiles(directory=uploads_dir), name="static_uploads")
 
 app.add_middleware(
     CORSMiddleware,

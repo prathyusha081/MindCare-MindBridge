@@ -100,10 +100,7 @@ def patient_incidents(patient_id: int, db: Session = Depends(get_db), doctor: Us
     _assert_owns_patient(db, doctor, patient_id)
     _log_access(db, doctor, "view_patient_incidents", patient_id)
 
-    rows = db.query(IncidentLog).filter(
-        IncidentLog.user_id == patient_id,
-        IncidentLog.incident_type.notin_(["user_utterance", "agent_reply"])
-    ).order_by(IncidentLog.timestamp.desc()).all()
+    rows = db.query(IncidentLog).filter(IncidentLog.user_id == patient_id).order_by(IncidentLog.timestamp.desc()).all()
     return [{"id": r.id, "type": r.incident_type, "notes": r.notes, "stress_score": r.stress_score,
              "analysis": r.ai_analysis, "resolved": r.resolved, "timestamp": r.timestamp} for r in rows]
 
@@ -116,10 +113,7 @@ def patient_profile(patient_id: int, db: Session = Depends(get_db), doctor: User
     # Fetch all logs
     mh = db.query(MentalHealthTracker).filter(MentalHealthTracker.user_id == patient_id).order_by(MentalHealthTracker.date.desc()).all()
     daily = db.query(DailyTracker).filter(DailyTracker.user_id == patient_id).order_by(DailyTracker.date.desc()).all()
-    incidents = db.query(IncidentLog).filter(
-        IncidentLog.user_id == patient_id,
-        IncidentLog.incident_type.notin_(["user_utterance", "agent_reply"])
-    ).order_by(IncidentLog.timestamp.desc()).all()
+    incidents = db.query(IncidentLog).filter(IncidentLog.user_id == patient_id).order_by(IncidentLog.timestamp.desc()).all()
     meds = db.query(Medication).filter(Medication.user_id == patient_id).order_by(Medication.start_date.desc()).all()
     reports = db.query(DiagnosisReport).filter(DiagnosisReport.user_id == patient_id).order_by(DiagnosisReport.date.desc()).all()
     ai_reports = db.query(AIReport).filter(AIReport.user_id == patient_id).order_by(AIReport.generated_at.desc()).all()
@@ -175,3 +169,12 @@ def add_review(payload: DoctorReviewRequest, db: Session = Depends(get_db), doct
     db.add(review)
     db.commit()
     return {"status": "saved"}
+
+
+@router.get("/reviews/mine")
+def get_my_reviews(db: Session = Depends(get_db), user: User = Depends(require_role("patient"))):
+    rows = db.query(DoctorReview).filter(DoctorReview.user_id == user.id).order_by(DoctorReview.created_at.desc()).all()
+    return [
+        {"id": r.id, "summary": r.doctor_summary, "suggestions": r.suggestions, "created_at": r.created_at}
+        for r in rows
+    ]

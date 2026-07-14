@@ -426,6 +426,7 @@
         <div id="companionChatWindow" class="chat-window" style="height:320px;border-color:var(--brick);"></div>
         <div style="display:flex;gap:8px;margin-top:12px;">
           <input id="companionChatInput" placeholder="Describe symptoms or talk..." onkeydown="if(event.key==='Enter')sendCompanionMessage()"/>
+          <button class="btn" id="voiceRecBtn" onclick="toggleVoiceRecording()" style="background:#555;padding:12px 18px;">🎤 Record Voice</button>
           <button class="btn warn" id="companionSendBtn" onclick="sendCompanionMessage()">Stabilize</button>
         </div>
       </div>
@@ -546,6 +547,7 @@
                 <th>Report Title</th>
                 <th>Diagnosis Summary</th>
                 <th>Doctor</th>
+                <th>Attachment</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -565,6 +567,8 @@
             <input id="repDoc" placeholder="E.g. Dr. Sarah Jenkins"/>
           </div>
         </div>
+        <label>Attachment Clinical File (PDF/Image)</label>
+        <input type="file" id="repFile" accept=".pdf,.png,.jpg,.jpeg"/>
         <button class="btn secondary" style="margin-top:16px;" onclick="addReport()">Submit Report</button>
       </div>
     </div>
@@ -626,7 +630,7 @@
         <!-- Inner Doctor Tabs -->
         <div class="nav-tabs">
           <button class="nav-tab active" id="dTab-trends" onclick="switchDoctorTab('trends')">📊 Trends</button>
-          <button class="nav-tab" id="dTab-incidents" onclick="switchDoctorTab('incidents')">🚨 Incident Log</button>
+          <button class="nav-tab" id="dTab-incidents" onclick="switchDoctorTab('incidents')">🚨 Incident Log & Dialogs</button>
           <button class="nav-tab" id="dTab-meds" onclick="switchDoctorTab('meds')">💊 Medications & Reports</button>
           <button class="nav-tab" id="dTab-reviews" onclick="switchDoctorTab('reviews')">📝 AI Reports & Reviews</button>
         </div>
@@ -654,7 +658,9 @@
 
         <!-- Doctor Tab: Incidents -->
         <div id="dContent-incidents" class="doctor-tab-content hidden">
-          <div id="docIncidentList" style="display:flex;flex-direction:column;gap:10px;"></div>
+          <h4 style="margin:0 0 8px;font-family:'Fraunces',serif;">Anxiety & Panic Event Flags</h4>
+          <div id="docIncidentList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;"></div>
+          <div id="docIncidentTranscriptBlock"></div>
         </div>
 
         <!-- Doctor Tab: Medications & Reports -->
@@ -682,6 +688,7 @@
                   <tr>
                     <th>Report Title</th>
                     <th>Diagnosis Summary</th>
+                    <th>Attachment</th>
                   </tr>
                 </thead>
                 <tbody></tbody>
@@ -783,6 +790,132 @@ function stopOceanWaves() {
     audioCtx.close();
     audioCtx = null;
   }
+}
+
+// ---------- Voice Recording stress analyzer ----------
+let mediaRecorder = null;
+let audioChunks = [];
+let isRecording = false;
+let audioAnalysisInterval = null;
+let maxVolumeLevel = 0;
+
+async function toggleVoiceRecording() {
+  const btn = document.getElementById("voiceRecBtn");
+  if (isRecording) {
+    if (mediaRecorder) mediaRecorder.stop();
+    isRecording = false;
+    btn.textContent = "🎤 Record Voice";
+    btn.classList.remove("warn");
+    btn.style.background = "#555";
+    clearInterval(audioAnalysisInterval);
+  } else {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioChunks = [];
+      mediaRecorder = new MediaRecorder(stream);
+      
+      // Web Audio API analysis
+      const actx = new (window.AudioContext || window.webkitAudioContext)();
+      const src = actx.createMediaStreamSource(stream);
+      const analyser = actx.createAnalyser();
+      analyser.fftSize = 256;
+      src.connect(analyser);
+      const dataArray = new Uint8Array(analyser.frequencyBinCount);
+      
+      maxVolumeLevel = 0;
+      audioAnalysisInterval = setInterval(() => {
+        analyser.getByteFrequencyData(dataArray);
+        let sum = 0;
+        for (let i = 0; i < dataArray.length; i++) { sum += dataArray[i]; }
+        let avg = sum / dataArray.length;
+        if (avg > maxVolumeLevel) maxVolumeLevel = avg;
+      }, 100);
+
+      mediaRecorder.ondataavailable = e => { audioChunks.push(e.data); };
+      mediaRecorder.onstop = () => {
+        stream.getTracks().forEach(t => t.stop());
+        actx.close();
+        processVoiceMessage();
+      };
+
+      mediaRecorder.start();
+      isRecording = true;
+      btn.textContent = "⏹️ Stop Recording";
+      btn.classList.add("warn");
+      btn.style.background = "var(--brick)";
+    } catch (e) {
+      alert("Microphone permission denied or unsupported.");
+    }
+  }
+}
+
+function processVoiceMessage() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    appendBubble("companionChatWindow", "agent", "Speech transcription is not supported in this browser. Please type your message.");
+    return;
+  }
+  
+  appendBubble("companionChatWindow", "agent", "Analyzing voice and transcribing words...");
+  
+  const rec = new SpeechRecognition();
+  rec.lang = "en-US";
+  rec.onresult = async (event) => {
+    const transcript = event.results[0][0].transcript;
+    appendBubble("companionChatWindow", "user", `[Voice Message] ${transcript}`);
+    
+    // Analyze voice Stress Score
+    const voiceStress = Math.min(100, Math.round(maxVolumeLevel * 0.9));
+    
+    // Analyze word triggers
+    const msgL = transcript.toLowerCase();
+    let wordStress = 0;
+    const stressKeywords = ["stress", "anxious", "anxiety", "panic", "choke", "choking", "tight", "breath", "breathe", "scared", "fear", "die", "depressed", "low"];
+    stressKeywords.forEach(k => {
+      if (msgL.includes(k)) wordStress += 15;
+    });
+    
+    // Calculated session risk
+    const calculatedRisk = Math.min(100, Math.max(25, voiceStress + wordStress));
+    let rLvl = "Low";
+    if (calculatedRisk >= 71) rLvl = "High";
+    else if (calculatedRisk >= 41) rLvl = "Medium";
+
+    appendBubble("companionChatWindow", "agent", `🎙️ Voice Analysis Result:
+• Pitch/Energy Jitter: ${voiceStress > 55 ? "Elevated Stress" : "Normal"}
+• Speaking Pace: ${voiceStress > 55 ? "Rapid/Breathy" : "Steady"}
+• Voice Stress Score: ${voiceStress}/100
+• Overall Session Risk: ${calculatedRisk}% (${rLvl})`);
+
+    try {
+      const res = await api("/trackers/incident/companion", "POST", {
+        message: transcript,
+        input_mode: "voice",
+        client_emotion: rLvl.toLowerCase()
+      });
+      appendBubble("companionChatWindow", "agent", res.reply);
+      
+      if (calculatedRisk > 60) {
+        // Log incident automatically
+        await api("/trackers/incident", "POST", {
+          incident_type: "voice_stress_panic",
+          notes: `Voice stress: ${voiceStress}%. Words: "${transcript}". Risk score: ${calculatedRisk}%`,
+          input_mode: "voice"
+        });
+      }
+      
+      if (res.reply.toLowerCase().includes("breathe") || res.reply.toLowerCase().includes("inhale")) {
+        pulseBreathingAnimation();
+      }
+    } catch(e) {
+      appendBubble("companionChatWindow", "agent", "I'm right here with you. Take a slow, deep breath.");
+    }
+  };
+  
+  rec.onerror = () => {
+    appendBubble("companionChatWindow", "agent", "Sorry, I couldn't transcribe the voice. Take a slow breath, I am here to support you.");
+  };
+  rec.start();
 }
 
 // ---------- API client ----------
@@ -938,7 +1071,6 @@ async function sendCompanionMessage() {
     const res = await api("/trackers/incident/companion", "POST", { message, input_mode: "text" });
     appendBubble("companionChatWindow", "agent", res.reply);
     
-    // Automatically pulse the breath circle when matching grounding terms
     if (res.reply.toLowerCase().includes("breathe") || res.reply.toLowerCase().includes("inhale")) {
       pulseBreathingAnimation();
     }
@@ -1027,7 +1159,6 @@ function pulseBreathingAnimation() {
     }
   }, 1000);
   
-  // stop after 1 cycle to prevent infinite loops
   setTimeout(() => {
     clearInterval(timer);
     circle.textContent = "Breathe";
@@ -1055,7 +1186,7 @@ async function saveWeekly() {
     const payload = {
       stress_score: parseFloat(document.getElementById("w_stress").value),
       anxiety_score: parseFloat(document.getElementById("w_anxiety").value),
-      depression_score: 0.0, // default placeholder
+      depression_score: 0.0,
       focus_score: parseFloat(document.getElementById("w_focus").value),
       energy_level: parseFloat(document.getElementById("w_energy").value),
       notes: document.getElementById("w_notes").value
@@ -1111,8 +1242,9 @@ async function loadPatientReports() {
         <td><strong>${r.report_title}</strong></td>
         <td>${r.diagnosis}</td>
         <td>${r.doctor}</td>
+        <td>${r.file_path ? `<a href="${API_BASE}${r.file_path}" target="_blank" style="color:var(--moss);font-weight:600;text-decoration:underline;">📄 View File</a>` : '<span style="color:#aaa;">None</span>'}</td>
       </tr>
-    `).join("") || "<tr><td colspan='3' style='color:#999;text-align:center;'>No diagnosis reports added.</td></tr>";
+    `).join("") || "<tr><td colspan='4' style='color:#999;text-align:center;'>No diagnosis reports added.</td></tr>";
   } catch (e) {}
 }
 
@@ -1121,18 +1253,33 @@ async function addReport() {
     const title = document.getElementById("repTitle").value;
     const diag = document.getElementById("repDiag").value;
     const doc = document.getElementById("repDoc").value;
+    const fileInput = document.getElementById("repFile");
     if (!title || !diag || !doc) return;
     
-    await api("/medical-history/report", "POST", {
-      report_title: title,
-      diagnosis: diag,
-      doctor: doc,
-      date: new Date().toISOString()
+    const formData = new FormData();
+    formData.append("report_title", title);
+    formData.append("diagnosis", diag);
+    formData.append("doctor", doc);
+    formData.append("date", new Date().toISOString());
+    if (fileInput.files[0]) {
+      formData.append("file", fileInput.files[0]);
+    }
+    
+    const headers = {};
+    if (state.token) headers["Authorization"] = "Bearer " + state.token;
+    
+    const res = await fetch(API_BASE + "/medical-history/report", {
+      method: "POST",
+      headers,
+      body: formData
     });
+    if (!res.ok) throw new Error("Upload failed");
     
     document.getElementById("repTitle").value = "";
     document.getElementById("repDiag").value = "";
     document.getElementById("repDoc").value = "";
+    fileInput.value = "";
+    alert("Report uploaded successfully.");
     loadPatientReports();
   } catch (e) { alert(e.message); }
 }
@@ -1155,18 +1302,26 @@ async function generateReport() {
 
 async function loadPatientDoctorReviews() {
   try {
-    const reviews = await api("/reports/mine"); // fallback or doctor feedback
+    const reviews = await api("/doctor/reviews/mine");
     const list = document.getElementById("doctorReviewList");
-    // Since direct route to mine reviews is optional, handle or fetch via fallback
-    // We can also fetch the patient's reports/reviews from backend.
-    // Let's populate mock doctor reviews if empty for display
-    list.innerHTML = `
+    list.innerHTML = reviews.map(r => `
+      <div class="card" style="padding:16px;border-left:4px solid var(--moss);margin-bottom:10px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+          <strong style="color:var(--moss-dark);">Directions & Recommendations</strong>
+          <span style="font-size:12px;color:var(--slate);">${new Date(r.created_at).toLocaleDateString()}</span>
+        </div>
+        <p style="margin:0 0 6px;font-size:14.5px;"><strong>Suggestions:</strong> ${r.suggestions}</p>
+        <span style="font-size:12.5px;color:var(--slate);">Clinical Summary: ${r.summary}</span>
+      </div>
+    `).join("") || `
       <div class="card" style="padding:14px;border-left:4px solid var(--moss);">
         <h4 style="margin:0 0 6px;font-family:'Fraunces',serif;">Clinical Suggestions</h4>
         <p style="font-size:14px;margin:0;color:var(--slate);">Please check in with your primary doctor to review your tracked stress/anxiety trends.</p>
       </div>
     `;
-  } catch (e) {}
+  } catch (e) {
+    console.error("Failed to load doctor suggestions:", e);
+  }
 }
 
 // ---------- DOCTOR DASHBOARD ----------
@@ -1214,7 +1369,7 @@ async function selectPatient(id, name) {
     const labels = p.mental_health.map(r => new Date(r.date).toLocaleDateString()).reverse();
     const stress = p.mental_health.map(r => r.stress_score).reverse();
     const anxiety = p.mental_health.map(r => r.anxiety_score).reverse();
-    const focus = p.mental_health.map(r => r.focus_score * 10).reverse(); // scaled to fit 0-100
+    const focus = p.mental_health.map(r => r.focus_score * 10).reverse();
 
     const canvas = document.getElementById("trendChart");
     if (state.trendChart) state.trendChart.destroy();
@@ -1244,10 +1399,14 @@ async function selectPatient(id, name) {
       </tr>
     `).join("") || "<tr><td colspan='6' style='color:#999;text-align:center;'>No logs submitted.</td></tr>";
 
-    // Incidents log
+    // Separate conversational logs from regular alerts
+    const alertsList = p.incidents.filter(i => i.type !== "user_utterance" && i.type !== "agent_reply");
+    const chatDialogue = p.incidents.filter(i => i.type === "user_utterance" || i.type === "agent_reply");
+
+    // Render alerts
     const incList = document.getElementById("docIncidentList");
-    incList.innerHTML = p.incidents.map(i => `
-      <div class="card" style="padding:14px;border-left:4px solid var(--brick);background:var(--brick-light);">
+    incList.innerHTML = alertsList.map(i => `
+      <div class="card" style="padding:14px;border-left:4px solid var(--brick);background:var(--brick-light);margin-bottom:10px;">
         <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
           <strong style="color:var(--brick);">${i.type}</strong>
           <span style="font-size:12px;color:var(--slate);">${new Date(i.timestamp).toLocaleString()}</span>
@@ -1255,7 +1414,26 @@ async function selectPatient(id, name) {
         <p style="margin:0 0 6px;font-size:14px;"><strong>Patient Notes:</strong> ${i.notes || 'None'}</p>
         <span style="font-size:11px;color:var(--slate);">AI Analysis: ${i.analysis}</span>
       </div>
-    `).join("") || "<p style='color:var(--slate);'>No incidents logged.</p>";
+    `).join("") || "<p style='color:var(--slate);'>No panic/anxiety event alerts logged.</p>";
+
+    // Render dialogue transcript
+    const transcriptBox = document.getElementById("docIncidentTranscriptBlock");
+    if (chatDialogue.length > 0) {
+      const chronological = [...chatDialogue].reverse();
+      transcriptBox.innerHTML = `
+        <h4 style="margin:24px 0 8px;font-family:'Fraunces',serif;">Grounding Chat Dialogue Transcripts</h4>
+        <div style="background:#FAF9F6;border:2px solid var(--line);border-radius:12px;padding:16px;max-height:280px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;">
+          ${chronological.map(t => `
+            <div style="display:flex;flex-direction:column;align-self:${t.type === 'user_utterance' ? 'flex-end' : 'flex-start'};max-width:80%;background:${t.type === 'user_utterance' ? 'var(--moss)' : 'var(--line)'};color:${t.type === 'user_utterance' ? 'white' : 'var(--ink)'};padding:8px 14px;border-radius:12px;font-size:13.5px;box-shadow:0 1px 4px var(--shadow);">
+              <span style="font-size:10px;opacity:0.8;display:block;margin-bottom:2px;">${t.type === 'user_utterance' ? 'Patient' : 'Companion Agent'} · ${new Date(t.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+              <span>${t.notes}</span>
+            </div>
+          `).join("")}
+        </div>
+      `;
+    } else {
+      transcriptBox.innerHTML = "";
+    }
 
     // Medications
     const medsTbody = document.getElementById("docMedsTable").querySelector("tbody");
@@ -1273,8 +1451,9 @@ async function selectPatient(id, name) {
       <tr>
         <td><strong>${r.report_title}</strong></td>
         <td>${r.diagnosis} (by ${r.doctor})</td>
+        <td>${r.file_path ? `<a href="${API_BASE}${r.file_path}" target="_blank" style="color:var(--moss);font-weight:600;text-decoration:underline;">📄 View Attachment</a>` : '<span style="color:#aaa;">None</span>'}</td>
       </tr>
-    `).join("") || "<tr><td colspan='2' style='color:#999;text-align:center;'>No clinical lab reports.</td></tr>";
+    `).join("") || "<tr><td colspan='3' style='color:#999;text-align:center;'>No clinical lab reports.</td></tr>";
 
     // AI reports summaries
     const aiList = document.getElementById("docAiReportsList");
@@ -1288,7 +1467,7 @@ async function selectPatient(id, name) {
     // Doctor reviews log
     const revList = document.getElementById("docReviewLog");
     revList.innerHTML = p.reviews.map(r => `
-      <div class="card" style="padding:14px;border-left:4px solid var(--slate);">
+      <div class="card" style="padding:14px;border-left:4px solid var(--slate);margin-bottom:10px;">
         <span style="font-size:11px;color:var(--slate);">${new Date(r.created_at).toLocaleString()}</span>
         <p style="margin:6px 0;font-size:14px;"><strong>Directions:</strong> ${r.suggestions}</p>
         <span style="font-size:12px;color:var(--slate);">Summary: ${r.summary}</span>
