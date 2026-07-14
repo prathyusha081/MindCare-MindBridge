@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MindBridge — AI Wellness Companion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+<style>
+  :root{
+    --paper:#FAF7F2; --ink:#2B2E2C; --moss:#5B7A63; --moss-dark:#456151;
+    --clay:#C97B5D; --brick:#B85C4A; --slate:#3B4A5A; --card:#FFFFFF;
+    --line:#E7E1D6;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',sans-serif;}
+  h1,h2,h3,.display{font-family:'Fraunces',serif;}
+  .hidden{display:none !important;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:24px;box-shadow:0 2px 10px rgba(43,46,44,0.04);}
+  .btn{background:var(--moss);color:white;border:none;border-radius:10px;padding:12px 20px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:background .15s;}
+  .btn:hover{background:var(--moss-dark);}
+  .btn.secondary{background:transparent;color:var(--moss);border:1.5px solid var(--moss);}
+  .btn.warn{background:var(--brick);}
+  input,select,textarea{width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:10px;font-family:'Inter',sans-serif;font-size:14px;background:white;color:var(--ink);}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--moss);}
+  label{font-size:13px;font-weight:600;color:#5c5f5c;display:block;margin:14px 0 6px;}
+  .container{max-width:1100px;margin:0 auto;padding:32px 20px;}
+  .topbar{display:flex;justify-content:space-between;align-items:center;padding:18px 32px;border-bottom:1px solid var(--line);background:var(--card);}
+  .grid{display:grid;gap:20px;}
+  .grid-2{grid-template-columns:1fr 1fr;}
+  @media(max-width:800px){.grid-2{grid-template-columns:1fr;}}
+
+  /* signature breathing element */
+  .breathe{width:64px;height:64px;border-radius:50%;background:radial-gradient(circle,var(--moss) 0%,var(--moss-dark) 100%);
+    animation:breathe 4s ease-in-out infinite;margin:0 auto;}
+  @keyframes breathe{0%,100%{transform:scale(0.75);opacity:.7;}50%{transform:scale(1.15);opacity:1;}}
+
+  .chat-window{height:380px;overflow-y:auto;border:1px solid var(--line);border-radius:12px;padding:16px;background:#FFFDF9;display:flex;flex-direction:column;gap:10px;}
+  .bubble{max-width:75%;padding:10px 14px;border-radius:14px;font-size:14.5px;line-height:1.45;}
+  .bubble.user{align-self:flex-end;background:var(--moss);color:white;border-bottom-right-radius:4px;}
+  .bubble.agent{align-self:flex-start;background:#EFEAE0;color:var(--ink);border-bottom-left-radius:4px;white-space:pre-wrap;}
+  .bubble.escalated{border:2px solid var(--brick);}
+
+  .mode-toggle{display:flex;gap:6px;margin-bottom:10px;}
+  .mode-btn{flex:1;padding:8px;border-radius:8px;border:1.5px solid var(--line);background:white;cursor:pointer;font-size:13px;font-weight:600;color:#777;}
+  .mode-btn.active{border-color:var(--moss);color:var(--moss);background:#F1F5F1;}
+
+  .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;}
+  .badge.low{background:#E4F0E6;color:var(--moss-dark);}
+  .badge.moderate{background:#FBEBD9;color:var(--clay);}
+  .badge.high{background:#F6DFDA;color:var(--brick);}
+
+  .patient-row{display:flex;justify-content:space-between;align-items:center;padding:14px;border-bottom:1px solid var(--line);cursor:pointer;}
+  .patient-row:hover{background:#F6F4EF;}
+
+  .disclaimer{font-size:12px;color:#888;border-top:1px solid var(--line);padding-top:12px;margin-top:16px;line-height:1.5;}
+  .rec-dot{width:8px;height:8px;border-radius:50%;background:var(--brick);display:inline-block;margin-right:6px;animation:pulse 1.2s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+</style>
+</head>
+<body>
+
+<!-- ================= AUTH VIEW ================= -->
+<div id="authView" class="container" style="max-width:420px;">
+  <div style="text-align:center;margin-bottom:28px;">
+    <div class="breathe"></div>
+    <h1 style="margin:16px 0 4px;font-size:28px;">MindBridge</h1>
+    <p style="color:#777;font-size:14px;">An AI companion for everyday stress — with a human doctor always in the loop.</p>
+  </div>
+
+  <div class="card">
+    <div style="display:flex;gap:8px;margin-bottom:18px;">
+      <button class="mode-btn active" id="loginTab" onclick="switchAuthTab('login')">Log in</button>
+      <button class="mode-btn" id="signupTab" onclick="switchAuthTab('signup')">Sign up</button>
+    </div>
+
+    <div id="loginForm">
+      <label>Email</label><input id="loginEmail" type="email" placeholder="you@example.com"/>
+      <label>Password</label><input id="loginPassword" type="password" placeholder="••••••••"/>
+      <button class="btn" style="width:100%;margin-top:18px;" onclick="login()">Log in</button>
+    </div>
+
+    <div id="signupForm" class="hidden">
+      <label>I am a</label>
+      <select id="signupRole" onchange="toggleDoctorSelect()">
+        <option value="patient">Patient</option>
+        <option value="doctor">Doctor</option>
+      </select>
+      <label>Full name</label><input id="signupName" placeholder="Jane Doe"/>
+      <label>Email</label><input id="signupEmail" type="email"/>
+      <label>Password</label><input id="signupPassword" type="password"/>
+      <div id="doctorSelectWrap">
+        <label>Assign a doctor</label>
+        <select id="signupDoctorId"></select>
+      </div>
+      <button class="btn" style="width:100%;margin-top:18px;" onclick="signup()">Create account</button>
+    </div>
+    <p id="authError" style="color:var(--brick);font-size:13px;margin-top:12px;"></p>
+  </div>
+
+  <p class="disclaimer">MindBridge is a supportive wellness tool, not a licensed medical device. It does not diagnose
+  conditions and is not a substitute for professional care. If you're in crisis, contact your local emergency
+  number or a crisis line immediately.</p>
+</div>
+
+<!-- ================= PATIENT VIEW ================= -->
+<div id="patientView" class="hidden">
+  <div class="topbar">
+    <div><strong class="display">MindBridge</strong> <span style="color:#999;">· patient</span></div>
+    <div><span id="patientName" style="margin-right:16px;color:#666;"></span><button class="btn secondary" onclick="logout()">Log out</button></div>
+  </div>
+  <div class="container grid grid-2">
+    <div class="card">
+      <h3 style="margin-top:0;">Talk it through</h3>
+      <div class="mode-toggle">
+        <button class="mode-btn active" id="mode-text" onclick="setInputMode('text')">💬 Text</button>
+        <button class="mode-btn" id="mode-voice" onclick="setInputMode('voice')">🎙️ Voice</button>
+        <button class="mode-btn" id="mode-video" onclick="setInputMode('video')">📷 Video</button>
+      </div>
+      <div id="chatWindow" class="chat-window"></div>
+      <video id="webcam" autoplay muted playsinline class="hidden" style="width:100%;border-radius:10px;margin-top:10px;"></video>
+      <div style="display:flex;gap:8px;margin-top:12px;">
+        <input id="chatInput" placeholder="Type how you're feeling..." onkeydown="if(event.key==='Enter')sendMessage()"/>
+        <button class="btn" id="chatSendBtn" onclick="sendMessage()">Send</button>
+      </div>
+      <p style="font-size:11px;color:#999;margin-top:8px;">Voice uses your browser's built-in speech recognition. Video runs a small facial-expression model locally in your browser — no video is uploaded.</p>
+    </div>
+
+    <div class="grid" style="gap:20px;">
+      <div class="card">
+        <h3 style="margin-top:0;">Daily check-in</h3>
+        <label>Sleep (hours)</label><input id="d_sleep" type="number" step="0.5" value="7"/>
+        <label>Water intake (liters)</label><input id="d_water" type="number" step="0.1" value="2"/>
+        <label>Exercise (minutes)</label><input id="d_exercise" type="number" value="20"/>
+        <label>Mood (1-10)</label><input id="d_mood" type="number" min="1" max="10" value="6"/>
+        <button class="btn" style="margin-top:14px;" onclick="saveDaily()">Save today's entry</button>
+      </div>
+
+      <div class="card">
+        <h3 style="margin-top:0;">AI weekly report</h3>
+        <button class="btn secondary" onclick="generateReport()">Generate report from this week</button>
+        <div id="reportOutput" style="margin-top:14px;font-size:14px;line-height:1.5;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= DOCTOR VIEW ================= -->
+<div id="doctorView" class="hidden">
+  <div class="topbar">
+    <div><strong class="display">MindBridge</strong> <span style="color:#999;">· doctor</span></div>
+    <div><span id="doctorName" style="margin-right:16px;color:#666;"></span><button class="btn secondary" onclick="logout()">Log out</button></div>
+  </div>
+  <div class="container grid grid-2">
+    <div class="card">
+      <h3 style="margin-top:0;">Your patients</h3>
+      <div id="patientList"></div>
+    </div>
+    <div class="card" id="patientDetailCard">
+      <h3 style="margin-top:0;">Patient trends</h3>
+      <p id="selectPatientHint" style="color:#999;font-size:14px;">Select a patient to view their trends and incidents.</p>
+      <canvas id="trendChart" height="140" class="hidden"></canvas>
+      <div id="incidentList" style="margin-top:16px;"></div>
+      <div id="reviewForm" class="hidden" style="margin-top:16px;">
+        <label>Doctor summary</label><textarea id="reviewSummary" rows="2"></textarea>
+        <label>Suggestions</label><textarea id="reviewSuggestions" rows="2"></textarea>
+        <button class="btn" style="margin-top:10px;" onclick="submitReview()">Save review</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---- CONFIG ----
+const API_BASE = "http://localhost:8000"; // change to your deployed backend URL
+
+let state = { token: null, role: null, userId: null, name: null, inputMode: "text", selectedPatientId: null, trendChart: null };
+
+// ---------- helpers ----------
+async function api(path, method = "GET", body = null) {
+  const headers = { "Content-Type": "application/json" };
+  if (state.token) headers["Authorization"] = "Bearer " + state.token;
+  const res = await fetch(API_BASE + path, { method, headers, body: body ? JSON.stringify(body) : null });
+  if (!res.ok) { const err = await res.json().catch(()=>({detail:res.statusText})); throw new Error(err.detail || "Request failed"); }
+  return res.json();
+}
+
+function switchAuthTab(tab) {
+  document.getElementById("loginTab").classList.toggle("active", tab === "login");
+  document.getElementById("signupTab").classList.toggle("active", tab === "signup");
+  document.getElementById("loginForm").classList.toggle("hidden", tab !== "login");
+  document.getElementById("signupForm").classList.toggle("hidden", tab !== "signup");
+  if (tab === "signup") loadDoctorOptions();
+}
+
+async function loadDoctorOptions() {
+  try {
+    const doctors = await api("/auth/doctors");
+    const sel = document.getElementById("signupDoctorId");
+    sel.innerHTML = doctors.map(d => `<option value="${d.id}">${d.name}</option>`).join("") || `<option value="">No doctors yet</option>`;
+  } catch (e) {}
+}
+
+function toggleDoctorSelect() {
+  const isPatient = document.getElementById("signupRole").value === "patient";
+  document.getElementById("doctorSelectWrap").classList.toggle("hidden", !isPatient);
+}
+
+async function signup() {
+  try {
+    const role = document.getElementById("signupRole").value;
+    const payload = {
+      name: document.getElementById("signupName").value,
+      email: document.getElementById("signupEmail").value,
+      password: document.getElementById("signupPassword").value,
+      role,
+      doctor_id: role === "patient" ? parseInt(document.getElementById("signupDoctorId").value) || null : null,
+    };
+    const res = await api("/auth/signup", "POST", payload);
+    onAuthSuccess(res);
+  } catch (e) { document.getElementById("authError").textContent = e.message; }
+}
+
+async function login() {
+  try {
+    const payload = { email: document.getElementById("loginEmail").value, password: document.getElementById("loginPassword").value };
+    const res = await api("/auth/login", "POST", payload);
+    onAuthSuccess(res);
+  } catch (e) { document.getElementById("authError").textContent = e.message; }
+}
+
+function onAuthSuccess(res) {
+  state.token = res.access_token; state.role = res.role; state.userId = res.user_id; state.name = res.name;
+  localStorage.removeItem === undefined ? null : null; // no-op, we intentionally avoid browser storage per platform constraints
+  document.getElementById("authView").classList.add("hidden");
+  if (res.role === "patient") {
+    document.getElementById("patientView").classList.remove("hidden");
+    document.getElementById("patientName").textContent = res.name;
+    loadChatHistory();
+  } else {
+    document.getElementById("doctorView").classList.remove("hidden");
+    document.getElementById("doctorName").textContent = res.name;
+    loadPatients();
+  }
+}
+
+function logout() {
+  state = { token: null, role: null, userId: null, name: null, inputMode: "text", selectedPatientId: null, trendChart: null };
+  document.getElementById("patientView").classList.add("hidden");
+  document.getElementById("doctorView").classList.add("hidden");
+  document.getElementById("authView").classList.remove("hidden");
+}
+
+// ---------- patient: chat ----------
+function setInputMode(mode) {
+  state.inputMode = mode;
+  ["text","voice","video"].forEach(m => document.getElementById("mode-"+m).classList.toggle("active", m===mode));
+  document.getElementById("webcam").classList.toggle("hidden", mode !== "video");
+  if (mode === "video") startWebcam();
+}
+
+let webcamStream = null, faceModelsLoaded = false;
+async function startWebcam() {
+  try {
+    webcamStream = await navigator.mediaDevices.getUserMedia({ video: true });
+    document.getElementById("webcam").srcObject = webcamStream;
+    if (!faceModelsLoaded && window.faceapi) {
+      const MODEL_URL = "https://justadudewhohacks.github.io/face-api.js/models";
+      await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+      await faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL);
+      faceModelsLoaded = true;
+    }
+  } catch (e) { console.warn("Webcam unavailable:", e); }
+}
+
+async function detectFaceEmotion() {
+  if (state.inputMode !== "video" || !faceModelsLoaded) return null;
+  try {
+    const result = await faceapi.detectSingleFace(document.getElementById("webcam"), new faceapi.TinyFaceDetectorOptions()).withFaceExpressions();
+    if (!result) return null;
+    const sorted = Object.entries(result.expressions).sort((a,b)=>b[1]-a[1]);
+    return sorted[0][0]; // top expression label, e.g. "fearful", "neutral"
+  } catch (e) { return null; }
+}
+
+function startVoiceInput() {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) { alert("Voice input isn't supported in this browser — try Chrome, or switch to text."); return; }
+  const recognition = new SpeechRecognition();
+  recognition.lang = "en-US";
+  recognition.onresult = (event) => {
+    document.getElementById("chatInput").value = event.results[0][0].transcript;
+    sendMessage();
+  };
+  recognition.start();
+}
+
+function appendBubble(role, text, escalated=false) {
+  const win = document.getElementById("chatWindow");
+  const div = document.createElement("div");
+  div.className = "bubble " + role + (escalated ? " escalated" : "");
+  div.textContent = text;
+  win.appendChild(div);
+  win.scrollTop = win.scrollHeight;
+}
+
+async function sendMessage() {
+  if (state.inputMode === "voice") { startVoiceInput(); return; }
+  const input = document.getElementById("chatInput");
+  const message = input.value.trim();
+  if (!message) return;
+  appendBubble("user", message);
+  input.value = "";
+
+  const clientEmotion = await detectFaceEmotion();
+  try {
+    const res = await api("/chat/message", "POST", { message, input_mode: state.inputMode, client_emotion: clientEmotion });
+    appendBubble("agent", res.reply, res.escalated);
+  } catch (e) { appendBubble("agent", "Sorry, something went wrong reaching the agent."); }
+}
+
+async function loadChatHistory() {
+  try {
+    const history = await api("/chat/history");
+    history.forEach(h => appendBubble(h.role, h.message));
+  } catch (e) {}
+}
+
+// ---------- patient: trackers & reports ----------
+async function saveDaily() {
+  const payload = {
+    sleep_hours: parseFloat(document.getElementById("d_sleep").value),
+    water_intake: parseFloat(document.getElementById("d_water").value),
+    exercise_minutes: parseInt(document.getElementById("d_exercise").value),
+    mood_score: parseInt(document.getElementById("d_mood").value),
+  };
+  await api("/trackers/daily", "POST", payload);
+  alert("Saved today's check-in.");
+}
+
+async function generateReport() {
+  document.getElementById("reportOutput").textContent = "Generating...";
+  try {
+    const res = await api("/reports/generate", "POST");
+    document.getElementById("reportOutput").innerHTML =
+      `<strong>Stress index:</strong> ${res.stress_index.toFixed(1)} · <strong>Avg sleep:</strong> ${res.sleep_avg.toFixed(1)}h<br/><br/>${res.summary}`;
+  } catch (e) { document.getElementById("reportOutput").textContent = "Couldn't generate a report yet — chat or log a few days first."; }
+}
+
+// ---------- doctor: patients ----------
+async function loadPatients() {
+  const patients = await api("/doctor/patients");
+  const list = document.getElementById("patientList");
+  list.innerHTML = patients.map(p => `<div class="patient-row" onclick="selectPatient(${p.id}, '${p.name}')"><span>${p.name}</span><span style="color:#999;font-size:13px;">${p.email}</span></div>`).join("") || "<p style='color:#999;'>No patients assigned yet.</p>";
+}
+
+async function selectPatient(id, name) {
+  state.selectedPatientId = id;
+  document.getElementById("selectPatientHint").classList.add("hidden");
+  document.getElementById("reviewForm").classList.remove("hidden");
+
+  const trends = await api(`/doctor/patients/${id}/trends`);
+  const labels = trends.mental_health.map(r => new Date(r.date).toLocaleDateString());
+  const stress = trends.mental_health.map(r => r.stress_score);
+  const anxiety = trends.mental_health.map(r => r.anxiety_score);
+
+  const canvas = document.getElementById("trendChart");
+  canvas.classList.remove("hidden");
+  if (state.trendChart) state.trendChart.destroy();
+  state.trendChart = new Chart(canvas, {
+    type: "line",
+    data: { labels, datasets: [
+      { label: "Stress", data: stress, borderColor: "#B85C4A", tension: 0.3 },
+      { label: "Anxiety", data: anxiety, borderColor: "#5B7A63", tension: 0.3 },
+    ]},
+    options: { responsive: true, plugins: { legend: { position: "bottom" } } },
+  });
+
+  const incidents = await api(`/doctor/patients/${id}/incidents`);
+  document.getElementById("incidentList").innerHTML = "<h4>Recent incidents</h4>" + (incidents.length ? incidents.map(i =>
+    `<div style="padding:8px 0;border-bottom:1px solid var(--line);font-size:13px;">
+      ${i.type === "crisis_language" ? "<span class='rec-dot'></span>" : ""}
+      <strong>${i.type}</strong> · stress ${i.stress_score} · ${new Date(i.timestamp).toLocaleString()}
+    </div>`).join("") : "<p style='color:#999;font-size:13px;'>No incidents logged.</p>");
+}
+
+async function submitReview() {
+  if (!state.selectedPatientId) return;
+  await api("/doctor/review", "POST", {
+    user_id: state.selectedPatientId,
+    doctor_summary: document.getElementById("reviewSummary").value,
+    suggestions: document.getElementById("reviewSuggestions").value,
+  });
+  alert("Review saved.");
+}
+
+toggleDoctorSelect();
+</script>
+</body>
+</html>

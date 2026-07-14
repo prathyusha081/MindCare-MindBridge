@@ -1,0 +1,19 @@
+# Virtual environment
+venv/
+**/venv/
+
+# Environment variables (contains private API keys)
+.env
+**/.env
+
+# Databases
+*.db
+**/*.db
+
+# Python cache
+__pycache__/
+**/__pycache__/
+*.pyc
+
+# Local zip backups
+*.zip
